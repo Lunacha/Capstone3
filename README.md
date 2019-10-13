@@ -6,3 +6,7 @@
 * 골든 파인더 - GPS 기반 사람찾기 어플리케이션
 ## Introduction
 소개문
+## Build 관련 도움말
+### MyApplication
+MyApplication/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+MyApplication/README.md 참조
