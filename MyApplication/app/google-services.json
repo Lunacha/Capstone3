@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "613598488536",
+    "firebase_url": "https://golden-finder.firebaseio.com",
+    "project_id": "golden-finder",
+    "storage_bucket": "golden-finder.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:613598488536:android:0fa434fd473f384b24b4ad",
+        "android_client_info": {
+          "package_name": "com.example.myapplication"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "613598488536-7fmau4caanf53f3vg01r9nimvrir8ho6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBDRQo7isigKulsmSscuUqzddi-VzwFvVs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "613598488536-7fmau4caanf53f3vg01r9nimvrir8ho6.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
