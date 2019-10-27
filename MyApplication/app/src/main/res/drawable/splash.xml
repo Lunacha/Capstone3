@@ -3,7 +3,7 @@
     <item android:drawable="@drawable/splash_bg_gradient"/>
     <item>
         <bitmap
-            android:src="@drawable/logo"
-            android:gravity="center|clip_horizontal|clip_vertical"/>
+            android:src="@mipmap/splash_logo"
+            android:gravity="center|clip_vertical|clip_horizontal"/>
     </item>
 </layer-list>
