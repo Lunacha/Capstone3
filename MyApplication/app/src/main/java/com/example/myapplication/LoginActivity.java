@@ -10,7 +10,6 @@ public class LoginActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_login);
     }
 
@@ -21,8 +20,6 @@ public class LoginActivity
     }
 
     protected void onLoginFailed() {
-        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-        startActivity(intent);
         finish();
     }
 
@@ -38,5 +35,9 @@ public class LoginActivity
 
     public void onLoginButtonClicked(View view) {
         onLoginSucceeded();
+    }
+
+    public void onFailButtonClicked(View view) {
+        onLoginFailed();
     }
 }

@@ -2,7 +2,6 @@
 
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/relativeLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -14,7 +13,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:adjustViewBounds="true"
-        app:srcCompat="@drawable/loginbanner_goldenfinder" />
+        app:srcCompat="@drawable/loginbanner_goldenfinder"/>
 
     <Button
         android:id="@+id/loginbutton"
@@ -35,6 +34,7 @@
         android:layout_centerHorizontal="true"
         android:text="login fail test"
         android:textAlignment="center"
-        android:textStyle="bold"/>
+        android:textStyle="bold"
+        android:onClick="onFailButtonClicked"/>
 
 </RelativeLayout>
