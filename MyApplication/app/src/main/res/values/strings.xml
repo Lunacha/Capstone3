@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">Golden Finder</string>
     <string name="changetextbutton">Change Text</string>
+    <string name="kakao_app_key">7db90c03c54a8065e5bd29578405c873</string>
 </resources>
