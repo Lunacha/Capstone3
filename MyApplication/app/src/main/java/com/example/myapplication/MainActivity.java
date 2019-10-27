@@ -2,69 +2,68 @@ package com.example.myapplication;
 
 
 import android.Manifest;
-
 import android.app.AlertDialog;
-
+import android.os.SystemClock;
+import android.view.WindowManager;
 import android.content.DialogInterface;
-
 import android.content.Intent;
-
 import android.content.pm.PackageManager;
-
 import android.location.LocationManager;
-
 import android.os.Bundle;
-
 import androidx.annotation.NonNull;
-
 import androidx.core.app.ActivityCompat;
-
 import androidx.core.content.ContextCompat;
-
 import androidx.appcompat.app.AppCompatActivity;
-
 import android.util.Log;
-
 import android.widget.Toast;
 
-
-
 import net.daum.mf.map.api.MapPoint;
+import net.daum.mf.map.api.MapPolyline;
 import net.daum.mf.map.api.MapReverseGeoCoder;
 import net.daum.mf.map.api.MapView;
 
-public class MainActivity extends AppCompatActivity implements MapView.CurrentLocationEventListener, MapReverseGeoCoder.ReverseGeoCodingResultListener {
+import java.util.Date;
+import java.util.NavigableMap;
+import java.util.TreeMap;
+import java.util.Vector;
+
+
+public class MainActivity
+        extends AppCompatActivity
+        implements MapView.CurrentLocationEventListener, MapReverseGeoCoder.ReverseGeoCodingResultListener {
 
     private static final String LOG_TAG = "MainActivity";
 
     private MapView mMapView;
 
-
     private static final int GPS_ENABLE_REQUEST_CODE = 2001;
     private static final int PERMISSIONS_REQUEST_CODE = 100;
     String[] REQUIRED_PERMISSIONS  = {Manifest.permission.ACCESS_FINE_LOCATION};
 
-
-
+    private TreeMap<Integer, TreeMap<Date, MapPoint>> traces = new TreeMap<>();
+    private final long epoch_LocalTime = System.currentTimeMillis();
+    private final long epoch_Device = SystemClock.elapsedRealtime();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_main);
 
-        mMapView = (MapView) findViewById(R.id.map_view);
-        //mMapView.setDaumMapApiKey(MapApiConst.DAUM_MAPS_ANDROID_APP_API_KEY);
+        mMapView = findViewById(R.id.map_view);
         mMapView.setCurrentLocationEventListener(this);
 
         if (!checkLocationServicesStatus()) {
 
             showDialogForLocationServiceSetting();
-        }else {
+        }
+        else {
 
             checkRunTimePermission();
         }
 
+        traces.put(0, new TreeMap<Date, MapPoint>());
     }
 
     @Override
@@ -75,9 +74,89 @@ public class MainActivity extends AppCompatActivity implements MapView.CurrentLo
     }
 
     @Override
-    public void onCurrentLocationUpdate(MapView mapView, MapPoint currentLocation, float accuracyInMeters) {
+    public void onCurrentLocationUpdate(
+            MapView mapView,
+            MapPoint currentLocation,
+            float accuracyInMeters) {
+        long now_Device = SystemClock.elapsedRealtime();
+        long now_LocalTime = now_Device - epoch_Device + epoch_LocalTime;
+        /*                 = System.currentTimeMillis();
+         *
+         * Currently using elapsed real time.
+         * To use currentTimeLillis, be aware that...
+         *
+         * 1) the timer can be shifted from some time correction & sync mechanisms of the system, or time zone changes.
+         *    Note that the TreeMap 'traces' will be corrupted compared to what really happened, in case of a timer shift occurs.
+         *    Using epoch_LocalTime with epoch_Device can solve this problem.
+         *
+         * 2) the timer of each device will differ from each other.
+         *
+         */
+
         MapPoint.GeoCoordinate mapPointGeo = currentLocation.getMapPointGeoCoord();
-        Log.i(LOG_TAG, String.format("MapView onCurrentLocationUpdate (%f,%f) accuracy (%f)", mapPointGeo.latitude, mapPointGeo.longitude, accuracyInMeters));
+        Log.w(
+                LOG_TAG,
+                String.format(
+                        "MapView onCurrentLocationUpdate (%f,%f) at %s, accuracy (%f)",
+                        mapPointGeo.latitude,
+                        mapPointGeo.longitude,
+                        new Date(now_LocalTime).toString(),
+                        accuracyInMeters));
+
+        final long millis = 1;
+        final long second = 1000 * millis;
+        final long minute = 60 * second;
+        final long hour = 60 * minute;
+        final long traceClassifier[] =
+                {
+                        24 * hour, // 48 * hour
+                        2 * minute, // 30 * minute,
+                        1 * minute, // 8 * minute,
+                        30 * second, // 3 * minute,
+                        15 * second, // minute,
+                        1 * millis
+                };
+
+        traces.get(0).put(new Date(now_LocalTime), currentLocation);
+
+        Vector<NavigableMap<Date, MapPoint>> tracesClassified = new Vector<>();
+
+        for (int i = 0; i < 5; i++) {
+            try {
+                tracesClassified.add(
+                        traces.get(0).subMap(
+                                traces.get(0).higherKey(new Date(now_LocalTime - traceClassifier[i])),
+                                true,
+                                traces.get(0).higherKey(new Date(now_LocalTime - traceClassifier[i + 1])),
+                                true));
+            }
+            catch (NullPointerException e)
+            {
+                tracesClassified.add(null);
+            }
+        }
+
+        for(MapPolyline target = mapView.findPolylineByTag(0); null != target; target = mapView.findPolylineByTag(0))
+        {
+            mapView.removePolyline(target);
+        }
+
+        int lineAlpha = 0x30;
+
+        for (NavigableMap<Date, MapPoint> map : tracesClassified) {
+            MapPolyline line = new MapPolyline();
+            line.setTag(0);
+            line.setLineColor(android.graphics.Color.argb(lineAlpha, 0x00, 0xFF, 0x00));
+            lineAlpha += 0x20;
+
+            if(null != map)
+            {
+                for (MapPoint p : map.values()) {
+                    line.addPoint(p);
+                }
+                mapView.addPolyline(line);
+            }
+        }
     }
 
 
@@ -163,7 +242,7 @@ public class MainActivity extends AppCompatActivity implements MapView.CurrentLo
         }
     }
 
-    void checkRunTimePermission(){
+    void checkRunTimePermission() {
 
         //런타임 퍼미션 처리
         // 1. 위치 퍼미션을 가지고 있는지 체크합니다.
@@ -233,7 +312,10 @@ public class MainActivity extends AppCompatActivity implements MapView.CurrentLo
 
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    protected void onActivityResult(
+            int requestCode,
+            int resultCode,
+            Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
         switch (requestCode) {
