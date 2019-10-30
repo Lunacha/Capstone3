@@ -17,10 +17,21 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.android.volley.DefaultRetryPolicy;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
+
 import net.daum.mf.map.api.MapPoint;
 import net.daum.mf.map.api.MapPolyline;
 import net.daum.mf.map.api.MapReverseGeoCoder;
 import net.daum.mf.map.api.MapView;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.Date;
 import java.util.NavigableMap;
@@ -163,8 +174,54 @@ public class MapViewActivity
                 mapView.addPolyline(line);
             }
         }
+
+        sendGPS(currentLocation);
     }
 
+    public void sendGPS(MapPoint currentLocation){
+
+        MapPoint.GeoCoordinate mapPointGeo = currentLocation.getMapPointGeoCoord();
+        String url = "serverIPAddress:Port";
+
+        //JSON형식으로 데이터 통신을 진행
+        JSONObject position = new JSONObject();
+        try {
+            position.put("latitude", Double.toString(mapPointGeo.latitude));
+            position.put("longitude", Double.toString(mapPointGeo.longitude));
+            String jsonString = position.toString(); //완성된 json 포맷
+
+            final RequestQueue requestQueue = Volley.newRequestQueue(MapViewActivity.this);
+            final JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, url, position, new Response.Listener<JSONObject>() {
+
+                //Get Response
+                @Override
+                public void onResponse(JSONObject response) {
+                    try {
+                        JSONObject jsonObject = new JSONObject(response.toString());
+
+                        String latitude = jsonObject.getString("latitude");
+                        String longitude = jsonObject.getString("longitude");
+
+                        Toast.makeText(getApplicationContext(), "lati : " + latitude + " longi : " + longitude, Toast.LENGTH_LONG).show();
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }, new Response.ErrorListener() {   //when error
+                @Override
+                public void onErrorResponse(VolleyError error) {
+                    error.printStackTrace();
+                    Toast.makeText(MapViewActivity.this, error.toString(), Toast.LENGTH_SHORT).show();
+                }
+            });
+            jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(DefaultRetryPolicy.DEFAULT_TIMEOUT_MS, DefaultRetryPolicy.DEFAULT_MAX_RETRIES, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+            requestQueue.add(jsonObjectRequest);
+            //
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
 
     @Override
     public void onCurrentLocationDeviceHeadingUpdate(MapView mapView, float v) {
