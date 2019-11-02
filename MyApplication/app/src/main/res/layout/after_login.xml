@@ -10,6 +10,13 @@
         android:layout_marginStart="60dp"
         android:layout_marginTop="530dp"
         android:text="로그아웃" />
+    <Button
+        android:id="@+id/btn_open_map"
+        android:layout_width="282dp"
+        android:layout_height="55dp"
+        android:layout_marginStart="60dp"
+        android:layout_marginTop="10dp"
+        android:text="맵켜기" />
 
     <TextView
         android:id="@+id/id_info"

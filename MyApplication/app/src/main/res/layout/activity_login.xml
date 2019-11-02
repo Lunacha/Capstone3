@@ -27,7 +27,7 @@
         android:id="@+id/failtest"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/loginbutton"
+        android:layout_below="@id/btn_kakao_login"
         android:layout_centerHorizontal="true"
         android:text="login fail test"
         android:textAlignment="center"

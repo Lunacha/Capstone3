@@ -18,7 +18,8 @@ import java.util.List;
 
 public class AfterLogin extends Activity {
     private Button btn_logout;
-    
+    private Button btn_openmap;
+
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.after_login);
@@ -54,6 +55,20 @@ public class AfterLogin extends Activity {
                     @Override
                     public void onCompleteLogout() {
                         Intent intent = new Intent(AfterLogin.this, LoginActivity.class);
+                        startActivity(intent);
+                    }
+                });
+            }
+        });
+
+        btn_openmap = (Button) findViewById(R.id.btn_open_map);
+        btn_openmap.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                UserManagement.getInstance().requestLogout(new LogoutResponseCallback() {
+                    @Override
+                    public void onCompleteLogout() {
+                        Intent intent = new Intent(AfterLogin.this, MapViewActivity.class);
                         startActivity(intent);
                     }
                 });
