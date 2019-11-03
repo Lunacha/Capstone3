@@ -30,7 +30,7 @@ public class AfterLogin extends Activity {
         String userIDToken = intentgetter.getStringExtra("id_token");
         info.setText(userID + ", token: " + userIDToken);
 
-        btn_logout = (Button) findViewById(R.id.btn_logout);
+        btn_logout = findViewById(R.id.btn_logout);
         btn_logout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -41,7 +41,7 @@ public class AfterLogin extends Activity {
             }
         });
 
-        btn_openmap = (Button) findViewById(R.id.btn_open_map);
+        btn_openmap = findViewById(R.id.btn_open_map);
         btn_openmap.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
