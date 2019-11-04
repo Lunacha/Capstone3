@@ -181,13 +181,14 @@ public class MapViewActivity
     public void sendGPS(MapPoint currentLocation){
 
         MapPoint.GeoCoordinate mapPointGeo = currentLocation.getMapPointGeoCoord();
-        String url = "serverIPAddress:Port";
+        String url = "http://IP:Port";
 
         //JSON형식으로 데이터 통신을 진행
         JSONObject position = new JSONObject();
         try {
             position.put("latitude", Double.toString(mapPointGeo.latitude));
             position.put("longitude", Double.toString(mapPointGeo.longitude));
+            position.put("userid", "SomeUserID");
             String jsonString = position.toString(); //완성된 json 포맷
 
             final RequestQueue requestQueue = Volley.newRequestQueue(MapViewActivity.this);
@@ -201,8 +202,9 @@ public class MapViewActivity
 
                         String latitude = jsonObject.getString("latitude");
                         String longitude = jsonObject.getString("longitude");
+                        String userid = jsonObject.getString("userid");
 
-                        Toast.makeText(getApplicationContext(), "lati : " + latitude + " longi : " + longitude, Toast.LENGTH_LONG).show();
+                        Toast.makeText(getApplicationContext(), "latitude : " + latitude + " longitude : " + longitude + " UserID : " + userid, Toast.LENGTH_LONG).show();
 
                     } catch (Exception e) {
                         e.printStackTrace();

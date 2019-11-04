@@ -19,7 +19,6 @@ app.use(function (req, res, next) {
     position.longitude = paramlongitude;
 
     res.send(position);
-
 });
 
 var server = http.createServer(app).listen(app.get('port'), function () {
