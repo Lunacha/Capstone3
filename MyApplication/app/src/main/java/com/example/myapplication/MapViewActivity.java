@@ -11,11 +11,19 @@ import android.content.pm.PackageManager;
 import android.location.LocationManager;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.appcompat.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.Toast;
+
+import com.google.firebase.database.ChildEventListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Request;
@@ -57,6 +65,39 @@ public class MapViewActivity
     private final long epoch_LocalTime = System.currentTimeMillis();
     private final long epoch_Device = SystemClock.elapsedRealtime();
 
+    private FirebaseDatabase mdatabase = FirebaseDatabase.getInstance();
+    private DatabaseReference myRef = mdatabase.getReference();
+
+    //will be async
+    public void getOtherLocation(){
+        myRef.child("RoomNumber").child("Location").addChildEventListener(new ChildEventListener() {
+            @Override
+            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+            }
+
+            @Override
+            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+                Location l = dataSnapshot.getValue(Location.class);
+                //traces.get()
+            }
+
+            @Override
+            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
+
+            }
+
+            @Override
+            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -133,8 +174,10 @@ public class MapViewActivity
                         15 * second, // minute,
                         1 * millis
                 };
+        Date currentTime = new Date(now_LocalTime);
+        traces.get(0).put(currentTime, currentLocation);
 
-        traces.get(0).put(new Date(now_LocalTime), currentLocation);
+        Location locData = new Location(currentLocation.getMapPointGeoCoord().latitude,currentLocation.getMapPointGeoCoord().longitude,currentTime.getTime());
 
         Vector<NavigableMap<Date, MapPoint>> tracesClassified = new Vector<>();
 
@@ -175,12 +218,14 @@ public class MapViewActivity
             }
         }
 
-        sendGPS(currentLocation);
+        sendGPS("someUserID",locData);
     }
 
-    public void sendGPS(MapPoint currentLocation){
+    public void sendGPS(String uid,Location locData){
 
-        MapPoint.GeoCoordinate mapPointGeo = currentLocation.getMapPointGeoCoord();
+        myRef.child("RoomNumber").child("Location").child(uid).setValue(locData);
+
+        /*MapPoint.GeoCoordinate mapPointGeo = currentLocation.getMapPointGeoCoord();
         String url = "http://IP:Port";
 
         //JSON형식으로 데이터 통신을 진행
@@ -219,10 +264,10 @@ public class MapViewActivity
             });
             jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(DefaultRetryPolicy.DEFAULT_TIMEOUT_MS, DefaultRetryPolicy.DEFAULT_MAX_RETRIES, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
             requestQueue.add(jsonObjectRequest);
-            //
+
         } catch (JSONException e) {
             e.printStackTrace();
-        }
+        }*/
     }
 
     @Override
