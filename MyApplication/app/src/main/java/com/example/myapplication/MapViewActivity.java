@@ -11,16 +11,35 @@ import android.content.pm.PackageManager;
 import android.location.LocationManager;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.appcompat.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.google.firebase.database.ChildEventListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+
+import com.android.volley.DefaultRetryPolicy;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
+
 import net.daum.mf.map.api.MapPoint;
 import net.daum.mf.map.api.MapPolyline;
 import net.daum.mf.map.api.MapReverseGeoCoder;
 import net.daum.mf.map.api.MapView;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.Date;
 import java.util.NavigableMap;
@@ -46,6 +65,39 @@ public class MapViewActivity
     private final long epoch_LocalTime = System.currentTimeMillis();
     private final long epoch_Device = SystemClock.elapsedRealtime();
 
+    private FirebaseDatabase mdatabase = FirebaseDatabase.getInstance();
+    private DatabaseReference myRef = mdatabase.getReference();
+
+    //will be async
+    public void getOtherLocation(){
+        myRef.child("RoomNumber").child("Location").addChildEventListener(new ChildEventListener() {
+            @Override
+            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+            }
+
+            @Override
+            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+                Location l = dataSnapshot.getValue(Location.class);
+                //traces.get()
+            }
+
+            @Override
+            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
+
+            }
+
+            @Override
+            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -122,8 +174,10 @@ public class MapViewActivity
                         15 * second, // minute,
                         1 * millis
                 };
+        Date currentTime = new Date(now_LocalTime);
+        traces.get(0).put(currentTime, currentLocation);
 
-        traces.get(0).put(new Date(now_LocalTime), currentLocation);
+        Location locData = new Location(currentLocation.getMapPointGeoCoord().latitude,currentLocation.getMapPointGeoCoord().longitude,currentTime.getTime());
 
         Vector<NavigableMap<Date, MapPoint>> tracesClassified = new Vector<>();
 
@@ -163,8 +217,58 @@ public class MapViewActivity
                 mapView.addPolyline(line);
             }
         }
+
+        sendGPS("someUserID",locData);
     }
 
+    public void sendGPS(String uid,Location locData){
+
+        myRef.child("RoomNumber").child("Location").child(uid).setValue(locData);
+
+        /*MapPoint.GeoCoordinate mapPointGeo = currentLocation.getMapPointGeoCoord();
+        String url = "http://IP:Port";
+
+        //JSON형식으로 데이터 통신을 진행
+        JSONObject position = new JSONObject();
+        try {
+            position.put("latitude", Double.toString(mapPointGeo.latitude));
+            position.put("longitude", Double.toString(mapPointGeo.longitude));
+            position.put("userid", "SomeUserID");
+            String jsonString = position.toString(); //완성된 json 포맷
+
+            final RequestQueue requestQueue = Volley.newRequestQueue(MapViewActivity.this);
+            final JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, url, position, new Response.Listener<JSONObject>() {
+
+                //Get Response
+                @Override
+                public void onResponse(JSONObject response) {
+                    try {
+                        JSONObject jsonObject = new JSONObject(response.toString());
+
+                        String latitude = jsonObject.getString("latitude");
+                        String longitude = jsonObject.getString("longitude");
+                        String userid = jsonObject.getString("userid");
+
+                        Toast.makeText(getApplicationContext(), "latitude : " + latitude + " longitude : " + longitude + " UserID : " + userid, Toast.LENGTH_LONG).show();
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }, new Response.ErrorListener() {   //when error
+                @Override
+                public void onErrorResponse(VolleyError error) {
+                    error.printStackTrace();
+                    Toast.makeText(MapViewActivity.this, error.toString(), Toast.LENGTH_SHORT).show();
+                }
+            });
+            jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(DefaultRetryPolicy.DEFAULT_TIMEOUT_MS, DefaultRetryPolicy.DEFAULT_MAX_RETRIES, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+            requestQueue.add(jsonObjectRequest);
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }*/
+    }
 
     @Override
     public void onCurrentLocationDeviceHeadingUpdate(MapView mapView, float v) {
