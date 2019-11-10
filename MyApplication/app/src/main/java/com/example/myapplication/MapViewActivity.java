@@ -33,6 +33,7 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 
+import net.daum.android.map.coord.MapCoord;
 import net.daum.mf.map.api.MapPoint;
 import net.daum.mf.map.api.MapPolyline;
 import net.daum.mf.map.api.MapReverseGeoCoder;
@@ -55,47 +56,72 @@ public class MapViewActivity
 
     private MapView mMapView;
 
+    final long millis = 1;
+    final long second = 1000 * millis;
+    final long minute = 60 * second;
+    final long hour = 60 * minute;
+    final long traceClassifier[] =
+            {
+                    24 * hour, // 48 * hour
+                    2 * minute, // 30 * minute,
+                    1 * minute, // 8 * minute,
+                    30 * second, // 3 * minute,
+                    15 * second, // minute,
+                    1 * millis
+            };
+
 
     private static final int GPS_ENABLE_REQUEST_CODE = 2001;
     private static final int PERMISSIONS_REQUEST_CODE = 100;
     String[] REQUIRED_PERMISSIONS  = {Manifest.permission.ACCESS_FINE_LOCATION};
 
 
-    private TreeMap<Integer, TreeMap<Date, MapPoint>> traces = new TreeMap<>();
+    private TreeMap<String, TreeMap<Date, MapPoint>> traces = new TreeMap<>();
     private final long epoch_LocalTime = System.currentTimeMillis();
     private final long epoch_Device = SystemClock.elapsedRealtime();
 
     private FirebaseDatabase mdatabase = FirebaseDatabase.getInstance();
     private DatabaseReference myRef = mdatabase.getReference();
 
-    //will be async
-    public void getOtherLocation(){
+    private String myUID = null;
+
+    public void addOtherLocationUpdateListener(){
         myRef.child("RoomNumber").child("Location").addChildEventListener(new ChildEventListener() {
             @Override
-            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-
-            }
+            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {}
 
             @Override
             public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-                Location l = dataSnapshot.getValue(Location.class);
+
+                if(dataSnapshot.getKey() != myUID) {
+                    String uid = dataSnapshot.getKey();
+                    for (DataSnapshot nodes : dataSnapshot.getChildren()) {
+                        long node_time = Long.valueOf(nodes.getKey());
+                        Location l = nodes.getValue(Location.class);
+                        if(traces.get(uid).size() != 0) {
+                            if (node_time > traces.get(uid).lastKey().getTime()) {
+                                MapPoint loc = MapPoint.mapPointWithGeoCoord(l.latitude,l.longitude);
+                                traces.get(uid).put(new Date(node_time),loc);
+                            }
+                        }
+                        else{
+                            MapPoint loc = MapPoint.mapPointWithGeoCoord(l.latitude,l.longitude);
+                            traces.get(uid).put(new Date(node_time),loc);
+                        }
+                    }
+
+                }
                 //traces.get()
             }
 
             @Override
-            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
-
-            }
+            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {}
 
             @Override
-            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-
-            }
+            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {}
 
             @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
+            public void onCancelled(@NonNull DatabaseError databaseError) {}
         });
     }
 
@@ -105,6 +131,8 @@ public class MapViewActivity
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
+        myUID = getIntent().getStringExtra("uid");
         setContentView(R.layout.map_view);
 
         mMapView = findViewById(R.id.map_view);
@@ -120,7 +148,9 @@ public class MapViewActivity
             checkRunTimePermission();
         }
 
-        traces.put(0, new TreeMap<Date, MapPoint>());
+        traces.put(myUID, new TreeMap<Date, MapPoint>());
+
+        addOtherLocationUpdateListener();
     }
 
     @Override
@@ -161,33 +191,28 @@ public class MapViewActivity
                         new Date(now_LocalTime).toString(),
                         accuracyInMeters));
 
-        final long millis = 1;
-        final long second = 1000 * millis;
-        final long minute = 60 * second;
-        final long hour = 60 * minute;
-        final long traceClassifier[] =
-                {
-                        24 * hour, // 48 * hour
-                        2 * minute, // 30 * minute,
-                        1 * minute, // 8 * minute,
-                        30 * second, // 3 * minute,
-                        15 * second, // minute,
-                        1 * millis
-                };
-        Date currentTime = new Date(now_LocalTime);
-        traces.get(0).put(currentTime, currentLocation);
+        Location locData = new Location(currentLocation.getMapPointGeoCoord().latitude
+                ,currentLocation.getMapPointGeoCoord().longitude);
 
-        Location locData = new Location(currentLocation.getMapPointGeoCoord().latitude,currentLocation.getMapPointGeoCoord().longitude,currentTime.getTime());
+        //drawPath(myUID,now_LocalTime,mapView,currentLocation);
+
+        sendGPS(now_LocalTime,locData);
+    }
+
+    private void drawPath(String myUID, long now_LocalTime, MapView mapView, MapPoint currentLocation)
+    {
+        Date currentTime = new Date(now_LocalTime);
+        traces.get(myUID).put(currentTime, currentLocation);
 
         Vector<NavigableMap<Date, MapPoint>> tracesClassified = new Vector<>();
 
         for (int i = 0; i < 5; i++) {
             try {
                 tracesClassified.add(
-                        traces.get(0).subMap(
-                                traces.get(0).higherKey(new Date(now_LocalTime - traceClassifier[i])),
+                        traces.get(myUID).subMap(
+                                traces.get(myUID).higherKey(new Date(now_LocalTime - traceClassifier[i])),
                                 true,
-                                traces.get(0).higherKey(new Date(now_LocalTime - traceClassifier[i + 1])),
+                                traces.get(myUID).higherKey(new Date(now_LocalTime - traceClassifier[i + 1])),
                                 true));
             }
             catch (NullPointerException e)
@@ -217,13 +242,13 @@ public class MapViewActivity
                 mapView.addPolyline(line);
             }
         }
-
-        sendGPS("someUserID",locData);
     }
 
-    public void sendGPS(String uid,Location locData){
+    public void sendGPS(long now_LocalTime, Location locData){
 
-        myRef.child("RoomNumber").child("Location").child(uid).setValue(locData);
+        Log.w(LOG_TAG, String.format("%s",myUID));
+
+        myRef.child("RoomNumber").child("Location").child(myUID).child(Long.toString(now_LocalTime)).setValue(locData);
 
         /*MapPoint.GeoCoordinate mapPointGeo = currentLocation.getMapPointGeoCoord();
         String url = "http://IP:Port";

@@ -46,6 +46,7 @@ public class AfterLogin extends Activity {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(AfterLogin.this, MapViewActivity.class);
+                intent.putExtra("uid",userID);
                 startActivity(intent);
             }
         });
