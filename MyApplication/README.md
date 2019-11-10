@@ -1,11 +1,15 @@
 # MyApplication
 ![ic_launcher](app/src/main/res/mipmap-xxxhdpi/ic_launcher.png)  
-Å×½ºÆ®¿ë ¾ÛÀÔ´Ï´Ù.
+í…ŒìŠ¤íŠ¸ìš© ì•±ì…ë‹ˆë‹¤.
 ## How To Build
-´ÙÀ½°ú °°Àº ¾ç½ÄÀ¸·Î Ä«Ä«¿À ¸Ê ¾Èµå·ÎÀÌµå ¾Û Å° °ªÀ» ÀÔ·ÂÇÏ¿© ./app/src/main/res/values/SecureKey.xml ÆÄÀÏÀ» »ı¼ºÇÒ °Í
+ë‹¤ìŒê³¼ ê°™ì€ ì–‘ì‹ìœ¼ë¡œ ì¹´ì¹´ì˜¤ ë§µ ì•ˆë“œë¡œì´ë“œ ì•± í‚¤ ê°’ì„ ì…ë ¥í•˜ì—¬ ./app/src/main/res/values/SecureKey.xml íŒŒì¼ì„ ìƒì„±í•  ê²ƒ
 ```xml
 <resources>
-    <string name="KakaoMapSecureKey">(Ä«Ä«¿À¸Ê ¾Èµå·ÎÀÌµå ¾Û Å°)</string>
+    <string name="KakaoMapSecureKey">(ì¹´ì¹´ì˜¤ë§µ ì•ˆë“œë¡œì´ë“œ ì•± í‚¤)</string>
+    <string name="GoogleAPISecureKey"(Firebase ì›¹ API í‚¤)</string>
 </resources>
 ```
-Ä«Ä«¿À¸Ê APP Å° »ı¼º ¹æ¹ıÀº https://webnautes.tistory.com/m/1319 ÂüÁ¶
+ì¹´ì¹´ì˜¤ë§µ APP í‚¤ ìƒì„± ë°©ë²•ì€ https://webnautes.tistory.com/m/1319 ì°¸ì¡°
+
+Firebase ì„¤ì •ì—ì„œ SHA ì¸ì¦ì„œë¥¼ ë“±ë¡í•´ì•¼ ë¡œê·¸ì¸APIê°€ ì‘ë™í•¨
+SHA-1ê°’ ì•Œì•„ë‚´ëŠ” ë°©ë²• https://snowdeer.github.io/android/2017/08/21/android-studio-debug-sha1/
