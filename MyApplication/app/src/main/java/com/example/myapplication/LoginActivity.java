@@ -135,4 +135,8 @@ public class LoginActivity extends Activity {
                 });
     }
 
+    private void onFailButtonClicked(View v)
+    {
+        finish();
+    }
 }

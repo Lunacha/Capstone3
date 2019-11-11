@@ -1,13 +1,17 @@
 package com.example.myapplication;
 
-class Location
+public class Location
 {
     public double latitude;
     public double longitude;
-    public long time;
-    Location(double lat, double lon, long t){
+    //public long time;
+
+    public Location(){}
+
+    public Location(double lat, double lon){
+
         this.latitude = lat;
         this.longitude = lon;
-        this.time = t;
+        //this.time = t;
     }
 }
