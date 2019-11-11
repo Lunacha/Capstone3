@@ -23,30 +23,20 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 
-import com.android.volley.DefaultRetryPolicy;
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.JsonObjectRequest;
-import com.android.volley.toolbox.Volley;
-
-import net.daum.android.map.coord.MapCoord;
 import net.daum.mf.map.api.MapPoint;
 import net.daum.mf.map.api.MapPolyline;
 import net.daum.mf.map.api.MapReverseGeoCoder;
 import net.daum.mf.map.api.MapView;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
+import java.util.ArrayList;
+import java.util.ConcurrentModificationException;
 import java.util.Date;
-import java.util.NavigableMap;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.TreeMap;
 import java.util.Vector;
-
 
 public class MapViewActivity
         extends AppCompatActivity
@@ -56,27 +46,43 @@ public class MapViewActivity
 
     private MapView mMapView;
 
-    final long millis = 1;
-    final long second = 1000 * millis;
-    final long minute = 60 * second;
-    final long hour = 60 * minute;
-    final long traceClassifier[] =
+    final static long millis = 1;
+    final static long second = 1000 * millis;
+    final static long minute = 60 * second;
+    final static long hour = 60 * minute;
+    final static long traceClassifier[] =
             {
                     24 * hour, // 48 * hour
                     2 * minute, // 30 * minute,
                     1 * minute, // 8 * minute,
                     30 * second, // 3 * minute,
-                    15 * second, // minute,
-                    1 * millis
+                    15 * second, // minute
             };
 
+    final static int lineColors[] = {
+            android.graphics.Color.rgb(0xFF, 0x00, 0x00),
+            android.graphics.Color.rgb(0xFF, 0x8C, 0x00),
+            android.graphics.Color.rgb(0xFF, 0xFF, 0x00),
+            android.graphics.Color.rgb(0x00, 0x00, 0xFF),
+            android.graphics.Color.rgb(0xFF, 0x00, 0x8C)
+    };
+
+    final long pathRenewingPeriod = 500;
+
+    private Timer t;
+    private TimerTask task_drawingPaths = new TimerTask() {
+        @Override
+        public void run() {
+            long now_Device = SystemClock.elapsedRealtime();
+            long now_LocalTime = now_Device - epoch_Device + epoch_LocalTime;
+            myRoom.drawTraces(now_LocalTime, mMapView);
+        }
+    };
 
     private static final int GPS_ENABLE_REQUEST_CODE = 2001;
     private static final int PERMISSIONS_REQUEST_CODE = 100;
     String[] REQUIRED_PERMISSIONS  = {Manifest.permission.ACCESS_FINE_LOCATION};
 
-
-    private TreeMap<String, TreeMap<Date, MapPoint>> traces = new TreeMap<>();
     private final long epoch_LocalTime = System.currentTimeMillis();
     private final long epoch_Device = SystemClock.elapsedRealtime();
 
@@ -85,34 +91,61 @@ public class MapViewActivity
 
     private String myUID = null;
 
-    public void addOtherLocationUpdateListener(){
-        myRef.child("RoomNumber").child("Location").addChildEventListener(new ChildEventListener() {
+//    public void addOtherLocationUpdateListener(){
+//        myRef.child("RoomNumber").child("Location").addChildEventListener(new ChildEventListener() {
+//            @Override
+//            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String previousChildName) {
+//
+//            }
+//
+//            @Override
+//            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String previousChildName) {
+//                Log.i(LOG_TAG, "db loc updated!");
+//                if(dataSnapshot.getKey() != myUID) {
+//                    String uid = dataSnapshot.getKey();
+//                    for (DataSnapshot nodes : dataSnapshot.getChildren()) {
+//                        long node_time = Long.valueOf(nodes.getKey());
+//                        Location l = nodes.getValue(Location.class);
+//                        if(traces.get(uid).size() != 0) {
+//                            if (node_time > traces.get(uid).lastKey().getTime()) {
+//                                MapPoint loc = MapPoint.mapPointWithGeoCoord(l.latitude,l.longitude);
+//                                traces.get(uid).put(new Date(node_time),loc);
+//                            }
+//                        }
+//                        else{
+//                            MapPoint loc = MapPoint.mapPointWithGeoCoord(l.latitude,l.longitude);
+//                            traces.get(uid).put(new Date(node_time),loc);
+//                        }
+//                    }
+//
+//                }
+//                //traces.get()
+//            }
+//
+//            @Override
+//            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {}
+//
+//            @Override
+//            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String previousChildName) {}
+//
+//            @Override
+//            public void onCancelled(@NonNull DatabaseError databaseError) {}
+//        });
+//    }
+
+    private class Room {
+        private String rID;
+        private int counterForLineTag = 0;
+        private ArrayList<Member> members = new ArrayList<>();
+        final private ChildEventListener roomListener = new ChildEventListener() {
             @Override
-            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {}
-
-            @Override
-            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-
-                if(dataSnapshot.getKey() != myUID) {
-                    String uid = dataSnapshot.getKey();
-                    for (DataSnapshot nodes : dataSnapshot.getChildren()) {
-                        long node_time = Long.valueOf(nodes.getKey());
-                        Location l = nodes.getValue(Location.class);
-                        if(traces.get(uid).size() != 0) {
-                            if (node_time > traces.get(uid).lastKey().getTime()) {
-                                MapPoint loc = MapPoint.mapPointWithGeoCoord(l.latitude,l.longitude);
-                                traces.get(uid).put(new Date(node_time),loc);
-                            }
-                        }
-                        else{
-                            MapPoint loc = MapPoint.mapPointWithGeoCoord(l.latitude,l.longitude);
-                            traces.get(uid).put(new Date(node_time),loc);
-                        }
-                    }
-
-                }
-                //traces.get()
+            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+                String newUser = dataSnapshot.getKey();
+                addMember(newUser);
             }
+
+            @Override
+            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {}
 
             @Override
             public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {}
@@ -122,12 +155,137 @@ public class MapViewActivity
 
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {}
-        });
+        };
+
+        public Room(String roomID) {
+            rID = roomID;
+            myRef.child(rID).child("Location").addChildEventListener(roomListener);
+            Log.i(LOG_TAG, String.format("you joined to room: %s", rID));
+        }
+
+        public void fin() {
+            myRef.child(rID).child("Location").removeEventListener(roomListener);
+            for (Member m : members) {
+                m.fin();
+            }
+            members.clear();
+            Log.i(LOG_TAG, String.format("you exited from room: %s", rID));
+        }
+
+        void addMember(String uID) {
+            members.add(new Member(uID, ++counterForLineTag));
+        }
+
+        void drawTraces(long now, MapView mapView) {
+            try {
+                for (Member m : members) {
+                    m.drawTrace(now, mapView);
+                }
+            }
+            catch (ConcurrentModificationException e)
+            {
+
+            }
+        }
     }
+
+    public class Member {
+        private String uID;
+        private int lineTag;    // for line tag feature, which does not support long type
+        private int lineColor;
+        private TreeMap<Date, MapPoint> trace = new TreeMap<>();
+
+        final private ChildEventListener userListener = new ChildEventListener() {
+            @Override
+            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String previousChildName) {
+                long time_latest = Long.valueOf(dataSnapshot.getKey());
+                double lat_latest = dataSnapshot.child("latitude").getValue(double.class);
+                double lon_latest = dataSnapshot.child("longitude").getValue(double.class);
+                Log.i(LOG_TAG, String.format("new data updated - uID: %s, time:%d, lat:%f, lon:%f", uID, time_latest, lat_latest, lon_latest));
+                synchronized (trace) {
+                    trace.put(new Date(time_latest), MapPoint.mapPointWithGeoCoord(lat_latest, lon_latest));
+                }
+            }
+
+            @Override
+            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String previousChildName) {}
+
+            @Override
+            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {}
+
+            @Override
+            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String previousChildName) {}
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {}
+        };
+
+        public Member(String userID, int Tag) {
+            uID = userID;
+            lineTag = Tag;
+            lineColor =
+                    (0 == myUID.compareTo(uID))
+                            ? android.graphics.Color.rgb(0x00, 0xFF, 0x00)
+                            : lineColors[Tag % lineColors.length];
+            myRef.child("RoomNumber").child("Location").child(uID).addChildEventListener(userListener);
+            Log.i(LOG_TAG, String.format("user joined to your room: %s", uID));
+        }
+
+        public void fin() {
+            myRef.child("RoomNumber").child("Location").child(uID).removeEventListener(userListener);
+            Log.i(LOG_TAG, String.format("user removed from your room: %s", uID));
+        }
+
+        public void drawTrace(long now, MapView mapView) {
+            Vector<MapPolyline> lines = new Vector<>();
+            for (long x : traceClassifier) {
+                lines.add(new MapPolyline());
+            }
+            int traceClassifierPicker = traceClassifier.length - 1;
+
+
+            synchronized (trace) {
+                for (Map.Entry<Date, MapPoint> entry : trace.descendingMap().entrySet()) {
+                    if (now - traceClassifier[traceClassifierPicker] > entry.getKey().getTime()) {
+                        lines.get(traceClassifierPicker--).addPoint(entry.getValue());
+                    }
+
+                    if (0 > traceClassifierPicker) {
+                        break;
+                    }
+
+                    lines.get(traceClassifierPicker).addPoint(entry.getValue());
+                }
+            }
+
+            MapPolyline prevline;
+            for (prevline = mapView.findPolylineByTag(lineTag); null != prevline; prevline = mapView.findPolylineByTag(lineTag)) {
+                mapView.removePolyline(prevline);
+            }
+
+            int lineAlpha = 0x20;
+
+            for (MapPolyline l : lines) {
+                l.setTag(lineTag);
+                l.setLineColor(android.graphics.Color.argb(
+                        lineAlpha,
+                        android.graphics.Color.red(lineColor),
+                        android.graphics.Color.green(lineColor),
+                        android.graphics.Color.blue(lineColor)));
+                lineAlpha += 0x30;
+                mapView.addPolyline(l);
+            }
+        }
+
+    }
+
+    Room myRoom;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Log.i(LOG_TAG, "onCreate called.");
         super.onCreate(savedInstanceState);
+
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -147,15 +305,22 @@ public class MapViewActivity
 
             checkRunTimePermission();
         }
+        myRoom = new Room("RoomNumber");
 
-        traces.put(myUID, new TreeMap<Date, MapPoint>());
-
-        addOtherLocationUpdateListener();
+        t = new Timer();
+        t.schedule(task_drawingPaths, 500, pathRenewingPeriod);
     }
 
     @Override
     protected void onDestroy() {
+        Log.i(LOG_TAG, "onDestroy called.");
         super.onDestroy();
+
+        t.cancel();
+        myRoom.fin();
+        myRoom = null;
+
+
         getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         mMapView.setCurrentLocationTrackingMode(MapView.CurrentLocationTrackingMode.TrackingModeOff);
         mMapView.setShowCurrentLocationMarker(false);
@@ -168,21 +333,9 @@ public class MapViewActivity
             float accuracyInMeters) {
         long now_Device = SystemClock.elapsedRealtime();
         long now_LocalTime = now_Device - epoch_Device + epoch_LocalTime;
-        /*                 = System.currentTimeMillis();
-         *
-         * Currently using elapsed real time.
-         * To use currentTimeLillis, be aware that...
-         *
-         * 1) the timer can be shifted from some time correction & sync mechanisms of the system, or time zone changes.
-         *    Note that the TreeMap 'traces' will be corrupted compared to what really happened, in case of a timer shift occurs.
-         *    Using epoch_LocalTime with epoch_Device can solve this problem.
-         *
-         * 2) the timer of each device will differ from each other.
-         *
-         */
 
         MapPoint.GeoCoordinate mapPointGeo = currentLocation.getMapPointGeoCoord();
-        Log.w(
+        Log.i(
                 LOG_TAG,
                 String.format(
                         "MapView onCurrentLocationUpdate (%f,%f) at %s, accuracy (%f)",
@@ -199,56 +352,8 @@ public class MapViewActivity
         sendGPS(now_LocalTime,locData);
     }
 
-    private void drawPath(String myUID, long now_LocalTime, MapView mapView, MapPoint currentLocation)
-    {
-        Date currentTime = new Date(now_LocalTime);
-        traces.get(myUID).put(currentTime, currentLocation);
-
-        Vector<NavigableMap<Date, MapPoint>> tracesClassified = new Vector<>();
-
-        for (int i = 0; i < 5; i++) {
-            try {
-                tracesClassified.add(
-                        traces.get(myUID).subMap(
-                                traces.get(myUID).higherKey(new Date(now_LocalTime - traceClassifier[i])),
-                                true,
-                                traces.get(myUID).higherKey(new Date(now_LocalTime - traceClassifier[i + 1])),
-                                true));
-            }
-            catch (NullPointerException e)
-            {
-                tracesClassified.add(null);
-            }
-        }
-
-        for(MapPolyline target = mapView.findPolylineByTag(0); null != target; target = mapView.findPolylineByTag(0))
-        {
-            mapView.removePolyline(target);
-        }
-
-        int lineAlpha = 0x20;
-
-        for (NavigableMap<Date, MapPoint> map : tracesClassified) {
-            MapPolyline line = new MapPolyline();
-            line.setTag(0);
-            line.setLineColor(android.graphics.Color.argb(lineAlpha, 0x00, 0xFF, 0x00));
-            lineAlpha += 0x30;
-
-            if(null != map)
-            {
-                for (MapPoint p : map.values()) {
-                    line.addPoint(p);
-                }
-                mapView.addPolyline(line);
-            }
-        }
-    }
-
-    public void sendGPS(long now_LocalTime, Location locData){
-
-        Log.w(LOG_TAG, String.format("%s",myUID));
-
-        myRef.child("RoomNumber").child("Location").child(myUID).child(Long.toString(now_LocalTime)).setValue(locData);
+    public void sendGPS(long now, Location locData){
+        myRef.child("RoomNumber").child("Location").child(myUID).child(Long.toString(now)).setValue(locData);
 
         /*MapPoint.GeoCoordinate mapPointGeo = currentLocation.getMapPointGeoCoord();
         String url = "http://IP:Port";
