@@ -2,9 +2,10 @@
     android:orientation="vertical" android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <net.daum.mf.map.api.MapView
-        android:id="@+id/map_view"
+    <fragment
+        android:id="@+id/map"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:name="com.naver.maps.map.MapFragment" />
 
 </RelativeLayout>

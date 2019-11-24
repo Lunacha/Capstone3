@@ -45,7 +45,7 @@ public class AfterLogin extends Activity {
         btn_openmap.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(AfterLogin.this, MapViewActivity.class);
+                Intent intent = new Intent(AfterLogin.this, MapFragmentActivity.class);
                 intent.putExtra("uid",userID);
                 startActivity(intent);
             }
