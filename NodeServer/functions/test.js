@@ -14,7 +14,7 @@ var list = function(){
     this.list_size = 0;
 }
 
-list.append = function(element){
+list.prototype.append = function(element){
     this.content[this.list_size] = element;
     this.list_size++;
 }
@@ -37,18 +37,16 @@ var calculate_angle = function(vec1, vec2){
 }
 
 var choose_next_node = function(graph, center_index, before_index){
-    var angle_list = list();
-    var stn_vec = vector(graph.node[before_index].latitude - graph.node[center_index].latitude, graph.node[before_index].longitude - graph.node[center_index].longitude)
+    var angle_list = new list();
+    var stn_vec = new vector(graph.node[before_index].latitude - graph.node[center_index].latitude, graph.node[before_index].longitude - graph.node[center_index].longitude);
     for(i in graph.node[center_index].link){
-        var adjacent_index = search_index(graph, graph.node[center_index].link[i])
+        var adjacent_index = search_index(graph, graph.node[center_index].link[i]);
         if(adjacent_index == before_index)
-            angle_list.append(0)
+            angle_list.append(0);
         else{
-            var ind_vec = vector(graph.node[adjacent_index].latitude - graph.node[center_index].latitude, graph.node[adjacent_index].longitude - graph.node[center_index].longitude)
+            var ind_vec = new vector(graph.node[adjacent_index].latitude - graph.node[center_index].latitude, graph.node[adjacent_index].longitude - graph.node[center_index].longitude);
             angle_list.append(calculate_angle(stn_vec,ind_vec));
         }
     }
     
 }
-
-console.log()
