@@ -4,6 +4,7 @@ package com.example.myapplication;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.graphics.drawable.shapes.Shape;
 import android.location.Location;
 import android.os.Bundle;
 import android.os.SystemClock;
@@ -22,6 +23,8 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.Circle;
+import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.JointType;
 import com.google.android.gms.maps.model.LatLng;
 
@@ -34,11 +37,26 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.maps.android.SphericalUtil;
+import com.google.maps.android.projection.SphericalMercatorProjection;
 
+
+import org.locationtech.jts.algorithm.ConvexHull;
+import org.locationtech.jts.awt.PointShapeFactory;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.MultiPoint;
+import org.locationtech.jts.geom.Point;
+import org.locationtech.jts.geom.Polygon;
+import org.locationtech.jts.util.GeometricShapeFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
 import java.util.ConcurrentModificationException;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -68,11 +86,14 @@ public class MapViewActivity extends AppCompatActivity implements
             };
 
     static final int lineColors[] = {
-            android.graphics.Color.rgb(0xFF, 0x00, 0x00),
-            android.graphics.Color.rgb(0xFF, 0x8C, 0x00),
-            android.graphics.Color.rgb(0xFF, 0xFF, 0x00),
-            android.graphics.Color.rgb(0x00, 0x00, 0xFF),
-            android.graphics.Color.rgb(0xFF, 0x00, 0x8C)
+            android.graphics.Color.rgb(232, 11, 24),
+            android.graphics.Color.rgb(29, 182, 190),
+            android.graphics.Color.rgb(253, 181, 45),
+            android.graphics.Color.rgb(14, 93, 223),
+            android.graphics.Color.rgb(253, 127, 35),
+            android.graphics.Color.rgb(102, 39, 218),
+            android.graphics.Color.rgb(106, 182, 35),
+            android.graphics.Color.rgb(226, 21, 141)
     };
 
     private class Room {
@@ -115,7 +136,12 @@ public class MapViewActivity extends AppCompatActivity implements
         }
 
         void addMember(String uID) {
-            members.add(new Member(uID, ++counterForLineTag));
+            if(0 == uID.compareTo(myUID)) {
+                members.add(new Member(rID, uID, -1));
+            }
+            else {
+                members.add(new Member(rID, uID, ++counterForLineTag));
+            }
         }
 
         @UiThread
@@ -123,6 +149,7 @@ public class MapViewActivity extends AppCompatActivity implements
             try {
                 for (Member m : members) {
                     m.drawTrace(now);
+                    m.drawSearchedArea(now);
                 }
             }
             catch (ConcurrentModificationException e)
@@ -134,7 +161,10 @@ public class MapViewActivity extends AppCompatActivity implements
 
     public class Member {
         private String uID;
+
+        private int lineColor;
         private Vector<Polyline> polylines;
+        private com.google.android.gms.maps.model.Polygon polygon;
         final private TreeMap<Date, LatLng> trace = new TreeMap<>();
 
         final private ChildEventListener userListener = new ChildEventListener() {
@@ -151,6 +181,7 @@ public class MapViewActivity extends AppCompatActivity implements
                                 time_latest,
                                 lat_latest,
                                 lon_latest));
+
 
                 synchronized (trace) {
                     trace.put(new Date(time_latest), new LatLng(lat_latest, lon_latest));
@@ -171,16 +202,16 @@ public class MapViewActivity extends AppCompatActivity implements
         };
 
         @UiThread
-        public Member(String userID, int Tag) {
+        public Member(String rID, String userID, int Tag) {
             uID = userID;
-            int lineColor =
-                    (0 == myUID.compareTo(uID))
+            lineColor =
+                    (-1 == Tag)
                             ? Color.rgb(0x00, 0xFF, 0x00)
                             : lineColors[Tag % lineColors.length];
             int lineAlpha = 0x20;
             float zIndex = (0 == myUID.compareTo(uID)) ?(1000f) :(-Float.valueOf(uID));
 
-            myRef.child("RoomNumber").child("MyLocation").child(uID).addChildEventListener(userListener);
+            myRef.child(rID).child("MyLocation").child(uID).addChildEventListener(userListener);
             Log.i(LOG_TAG, String.format("user joined to your room: %s", uID));
 
             polylines = new Vector<>();
@@ -208,7 +239,7 @@ public class MapViewActivity extends AppCompatActivity implements
                 l.remove();
             }
 
-            Log.i(LOG_TAG, String.format("user removed from your room: %s", uID));
+            Log.i(LOG_TAG, String.format("user was removed from your room: %s", uID));
         }
 
         @UiThread
@@ -235,7 +266,108 @@ public class MapViewActivity extends AppCompatActivity implements
                 }
             }
         }
+
+        @UiThread
+        public void drawSearchedArea(long now) {
+            GeometryFactory geometryFactory = new GeometryFactory();
+
+            Geometry searchedArea = null;
+            List<Coordinate> prevSearchAreaVertices = null;
+            synchronized (trace) {
+                for (Map.Entry<Date, LatLng> entry : trace.descendingMap().entrySet()) {
+                    // TODO: set characteristics of target
+                    double targetSpeed = 0.2d; // (meter per second)
+                    double targetHeight = 1.2d; // (meter per second)
+                    double radius
+                            = getSearchRadius(targetHeight, entry.getKey())
+                            - ((now - entry.getKey().getTime()) / 1000d * targetSpeed);
+
+                    radius = (0 > radius) ? 0 : radius;
+
+                    if (null == searchedArea)
+                    {
+                        if (0 >= radius)
+                        {
+                            return;
+                        }
+                        prevSearchAreaVertices
+                                = convertLatLngList2CoordinateList(
+                                        createCircleLatLngList(entry.getValue(), radius));
+                        searchedArea = geometryFactory.createPolygon(prevSearchAreaVertices.toArray(new Coordinate[0]));
+                    }
+                    else
+                    {
+                        List<Coordinate> currentSearchAreaVertices
+                                = convertLatLngList2CoordinateList(
+                                        createCircleLatLngList(entry.getValue(), radius));
+
+                        prevSearchAreaVertices.addAll(currentSearchAreaVertices);
+
+                        searchedArea = searchedArea.union(geometryFactory.createLineString(
+                                prevSearchAreaVertices.toArray(new Coordinate[0])).convexHull());
+                        prevSearchAreaVertices = currentSearchAreaVertices;
+                    }
+
+                    if (0 == radius)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            if (null == searchedArea)
+            {
+                return;
+            }
+
+            if(searchedArea.isEmpty())
+            {
+                return;
+            }
+
+            ArrayList<Coordinate> arr;
+            PolygonOptions options = new PolygonOptions()
+                    .strokeColor(Color.TRANSPARENT)
+                    .fillColor(Color.argb(80, Color.red(lineColor), Color.green(lineColor), Color.blue(lineColor)));
+
+            arr = new ArrayList<>(Arrays.asList(searchedArea.getCoordinates()));
+
+            for (Coordinate coordinate : arr) {
+                options.add(new LatLng(coordinate.getX(), coordinate.getY()));
+            }
+
+            if (null != polygon)
+            {
+                polygon.remove();
+            }
+            polygon = map.addPolygon(options);
+        }
+
+        double getSearchRadius(double targetHeight, Date date) {
+            Calendar c = Calendar.getInstance();
+            c.setTime(date);
+            double radius = (targetHeight * 0.22d + 11.0d) * (((c.get(Calendar.HOUR_OF_DAY) + 5) % 24 < 12 ) ? (3d / 2d) : 1);
+            return radius;
+        }
     }
+
+
+    private class Target
+    {
+        LatLng location_lost;
+        long time_lost;
+
+        Target(LatLng location_lost_in, long time_lost_in) {
+            location_lost = location_lost_in;
+            time_lost = time_lost_in;
+        }
+
+        void drawRadialArea() {
+
+        }
+    }
+
+
 
     private final long epoch_LocalTime = System.currentTimeMillis();
     private final long epoch_Device = SystemClock.elapsedRealtime();
@@ -266,7 +398,6 @@ public class MapViewActivity extends AppCompatActivity implements
 
     private FirebaseDatabase mdatabase = FirebaseDatabase.getInstance();
     private DatabaseReference myRef = mdatabase.getReference();
-
 
     @Override
     protected void onCreate(
@@ -413,6 +544,34 @@ public class MapViewActivity extends AppCompatActivity implements
 
     public void sendGPS(long now, MyLocation locData) {
         myRef.child("RoomNumber").child("MyLocation").child(myUID).child(Long.toString(now)).setValue(locData);
+    }
+
+    public List<LatLng> createCircleLatLngList(LatLng center, double radius) {
+
+        PolygonOptions opt = new PolygonOptions();
+
+        if(0 == radius)
+        {
+            opt.add(center);
+            return opt.getPoints();
+        }
+
+        for(double dir = 0; dir < 360d; dir += 360d / 64d)
+        {
+            opt.add(SphericalUtil.computeOffset(center, radius, dir));
+        }
+
+        opt.add(opt.getPoints().get(0));
+
+        return opt.getPoints();
+    }
+
+    public List<Coordinate> convertLatLngList2CoordinateList(List<LatLng> latLngList) {
+        List<Coordinate> list = new ArrayList<>();
+        for (LatLng latLng : latLngList) {
+            list.add(new Coordinate(latLng.latitude, latLng.longitude));
+        }
+        return list;
     }
 }
 
