@@ -45,6 +45,7 @@ import org.locationtech.jts.algorithm.ConvexHull;
 import org.locationtech.jts.awt.PointShapeFactory;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryCollection;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.MultiPoint;
 import org.locationtech.jts.geom.Point;
@@ -271,15 +272,15 @@ public class MapViewActivity extends AppCompatActivity implements
         public void drawSearchedArea(long now) {
             GeometryFactory geometryFactory = new GeometryFactory();
 
-            Geometry searchedArea = null;
+            Polygon searchedArea = null;
             List<Coordinate> prevSearchAreaVertices = null;
             synchronized (trace) {
                 for (Map.Entry<Date, LatLng> entry : trace.descendingMap().entrySet()) {
                     // TODO: set characteristics of target
-                    double targetSpeed = 0.2d; // (meter per second)
-                    double targetHeight = 1.2d; // (meter per second)
+                    double targetSpeed = 0.01d; // (meter per second)
+                    double targetHeight = 0.2d; // (meter per second)
                     double radius
-                            = getSearchRadius(targetHeight, entry.getKey())
+                            = 1//getSearchRadius(targetHeight, entry.getKey())
                             - ((now - entry.getKey().getTime()) / 1000d * targetSpeed);
 
                     radius = (0 > radius) ? 0 : radius;
@@ -303,7 +304,7 @@ public class MapViewActivity extends AppCompatActivity implements
 
                         prevSearchAreaVertices.addAll(currentSearchAreaVertices);
 
-                        searchedArea = searchedArea.union(geometryFactory.createLineString(
+                        searchedArea = (Polygon)searchedArea.union(geometryFactory.createLineString(
                                 prevSearchAreaVertices.toArray(new Coordinate[0])).convexHull());
                         prevSearchAreaVertices = currentSearchAreaVertices;
                     }
@@ -327,13 +328,33 @@ public class MapViewActivity extends AppCompatActivity implements
 
             ArrayList<Coordinate> arr;
             PolygonOptions options = new PolygonOptions()
-                    .strokeColor(Color.TRANSPARENT)
-                    .fillColor(Color.argb(80, Color.red(lineColor), Color.green(lineColor), Color.blue(lineColor)));
+                    //.strokeColor(Color.TRANSPARENT)
+                    .fillColor(Color.argb(64, Color.red(lineColor), Color.green(lineColor), Color.blue(lineColor)));
 
-            arr = new ArrayList<>(Arrays.asList(searchedArea.getCoordinates()));
+            Polygon boundaryPolygon = geometryFactory.createPolygon(searchedArea.getExteriorRing().getCoordinates());
+            Geometry holes = boundaryPolygon.difference(searchedArea);
+            arr = new ArrayList<>(Arrays.asList(boundaryPolygon.getCoordinates()));
 
             for (Coordinate coordinate : arr) {
                 options.add(new LatLng(coordinate.getX(), coordinate.getY()));
+            }
+
+            final int numHoles = holes.getNumGeometries();
+            for (int i = 0; i < numHoles; i++)
+            {
+                arr = new ArrayList<>(Arrays.asList(holes.getGeometryN(i).getCoordinates()));
+                if(3 > arr.size())
+                {
+                    continue;
+                }
+
+                ArrayList<LatLng> holeList = new ArrayList<>();
+                for (Coordinate coordinate : arr) {
+                    holeList.add(new LatLng(coordinate.getX(), coordinate.getY()));
+                }
+
+
+                options.addHole(holeList);
             }
 
             if (null != polygon)
@@ -427,6 +448,32 @@ public class MapViewActivity extends AppCompatActivity implements
 
         t = new Timer();
         t.schedule(task_drawingPaths, 500, pathRenewingPeriod);
+
+//        // test code
+//
+//        double latitude = 37.3d;
+//        double longitude = 127d;
+//        double diameterInMeters = 20000d; //20km
+//
+//        GeometricShapeFactory shapeFactory = new GeometricShapeFactory();
+//        shapeFactory.setNumPoints(64); // adjustable
+//        shapeFactory.setCentre(new Coordinate(latitude, longitude));
+//
+//        shapeFactory.setHeight(diameterInMeters * 1.255d / 111320d);
+//        shapeFactory.setWidth(diameterInMeters * 1.255d * (40075000 * Math.cos(Math.toRadians(latitude)) / 360) / 111320d / 111320d);
+//
+//        Polygon circle = shapeFactory.createEllipse();
+//
+//        List<Coordinate> coordinates = new ArrayList<>(Arrays.asList(circle.getCoordinates()));
+//
+//        PolygonOptions options = new PolygonOptions().strokeColor(Color.RED);
+//
+//        for (Coordinate coordinate : coordinates) {
+//            options.add(new LatLng(coordinate.getX(), coordinate.getY()));
+//        }
+//
+//        map.addPolygon(options);
+//        map.addCircle(new CircleOptions().center(new LatLng(latitude, longitude)).radius(diameterInMeters / 2));
     }
 
     @Override
@@ -550,13 +597,13 @@ public class MapViewActivity extends AppCompatActivity implements
 
         PolygonOptions opt = new PolygonOptions();
 
-        if(0 == radius)
+        if (0 == radius)
         {
             opt.add(center);
             return opt.getPoints();
         }
 
-        for(double dir = 0; dir < 360d; dir += 360d / 64d)
+        for (double dir = 0; dir < 360d; dir += 360d / 32d)
         {
             opt.add(SphericalUtil.computeOffset(center, radius, dir));
         }
