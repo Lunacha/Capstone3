@@ -258,202 +258,6 @@ public class MapViewActivity extends AppCompatActivity implements
             return (null == memberToUpdateArea) ? null : new Pair<>(memberToUpdateArea, new Pair<>(entryPrev, entry));
         }
 
-//        void updateSearchArea() {
-//            Log.i(LOG_TAG, "Updating Area.");
-//            Pair<Member, Pair<Map.Entry<Long, LatLng>, Map.Entry<Long, LatLng>>> info;
-//
-//            while (null != (info = getInfoToUpdate())) {
-//                if (null == info.second)
-//                {
-//                    continue;
-//                }
-//                if (null == info.second.second)
-//                {
-//                    continue;
-//                }
-//
-//                ++(info.first.lastlyUpdatedLatLngIndex);
-//
-//                GeometryFactory fact = new GeometryFactory();
-//                Geometry buffer = fact.createMultiPolygon(null);
-//                List<Coordinate> coordinates = Arrays.asList(searchingArea.getCoordinates());
-//                for (Coordinate coordinate : coordinates) {
-//                    double speed = target.getSpeed() * (info.second.second.getKey() - modifiedTime) / 1000;
-//                    if (0 == speed)
-//                    {
-//                        continue;
-//                    }
-//                    List<LatLng> list = createCircleLatLngList(
-//                            coordinatemetric2LatLng(coordinate),
-//                            speed);
-//                    ArrayList<Coordinate> coords = new ArrayList<>();
-//                    for (LatLng latLng : list) {
-//                        coords.add(coordinateLatLng2metric(latLng));
-//                    }
-//                    buffer = buffer.union(fact.createPolygon(coords.toArray(new Coordinate[0])));
-//                }
-//                searchingArea = searchingArea.union(buffer);
-//
-//                modifiedTime = info.second.second.getKey();
-//
-//                // shrink searched area
-//                Geometry ge = new GeometryFactory().createMultiPolygon(null);
-//                int NumberOfSearchedAreaByMemberToUpdate = searchedAreaByMember.getNumGeometries();
-//                int NumberOfSearchingArea = searchingArea.getNumGeometries();
-//                for (int i = 0; i < NumberOfSearchedAreaByMemberToUpdate; i++)
-//                {
-//                    Geometry g = searchedAreaByMember.getGeometryN(i);
-//
-//                    for (int j = 0; j < NumberOfSearchingArea; j++)
-//                    {
-//                        g = g.difference(searchingArea.getGeometryN(j));
-//                    }
-//
-//                    ge = ge.union(g);
-//                }
-//
-//                searchedAreaByMember = ge;
-//
-//                Geometry currentWatchingArea;
-//                Geometry prevWatchingArea;
-//
-//                List<LatLng> list = createCircleLatLngList(
-//                        info.second.second.getValue(),
-//                        target.getSearchRadius(info.second.second.getKey()));
-//
-//                ArrayList<Coordinate> coords = new ArrayList<>();
-//
-//                for (LatLng latLng : list) {
-//                    coords.add(coordinateLatLng2metric(latLng));
-//                }
-//
-//                currentWatchingArea = fact.createPolygon(coords.toArray(new Coordinate[0]));
-//
-//                if (null != info.second.first)
-//                {
-//                    list = createCircleLatLngList(
-//                            info.second.first.getValue(),
-//                            target.getSearchRadius(info.second.first.getKey()));
-//
-//                    coords = new ArrayList<>();
-//
-//                    for (LatLng latLng : list) {
-//                        coords.add(coordinateLatLng2metric(latLng));
-//                    }
-//
-//                }
-//
-//                prevWatchingArea = fact.createPolygon(coords.toArray(new Coordinate[0]));
-//
-//
-//                int n = searchingArea.getNumGeometries();
-//                Geometry prevWatchingAreaCarved = null;
-//                for (int i = 0; i < n; i++)
-//                {
-//                    if (null == prevWatchingAreaCarved)
-//                    {
-//                        prevWatchingAreaCarved = prevWatchingArea.difference(searchingArea.getGeometryN(i));
-//                    }
-//                    else
-//                    {
-//                        prevWatchingAreaCarved.union(prevWatchingArea.difference(searchingArea.getGeometryN(i)));
-//                    }
-//                }
-//
-//                if (null == prevWatchingAreaCarved)
-//                {
-//                    searchedAreaByMember = searchedAreaByMember.union(currentWatchingArea);
-//                }
-//                else if (0 == prevWatchingAreaCarved.getArea())
-//                {
-//                    searchedAreaByMember = searchedAreaByMember.union(currentWatchingArea);
-//                }
-//                else
-//                {
-//                    searchedAreaByMember = searchedAreaByMember.union(prevWatchingAreaCarved.union(currentWatchingArea).convexHull());
-//                }
-//
-//                Log.i(LOG_TAG, String.format("Area: %f", searchingArea.getArea()));
-//            }
-//        }
-//
-//        void drawArea() {
-//            Log.i(LOG_TAG, "Drawing Area.");
-//
-//            for (Polygon polygon : polygons) {
-//                polygon.remove();
-//            }
-//
-//            if (null == searchingArea)
-//            {
-//                Log.i(LOG_TAG, "searchingArea was NULL.");
-//                return;
-//            }
-//
-//            int number = searchedAreaByMember.getNumGeometries();
-//            for (int i = 0; i < number; i++) {
-//                Geometry g = searchedAreaByMember.getGeometryN(i);
-//                if (org.locationtech.jts.geom.Polygon.class == g.getClass())
-//                {
-//                    ArrayList<LatLng> latLngArrayList = new ArrayList<>();
-//
-//                    for (Coordinate coordinate : ((org.locationtech.jts.geom.Polygon) g).getExteriorRing().getCoordinates()) {
-//                        latLngArrayList.add(coordinatemetric2LatLng(coordinate));
-//                    }
-//
-//                    PolygonOptions options = new PolygonOptions()
-//                            .addAll(latLngArrayList)
-//                            .fillColor(Color.argb(50, 0, 100, 200))
-//                            //.strokeColor(Color.TRANSPARENT)
-//                            //.strokeWidth(0)
-//                            .zIndex(-10000000000000000000f);
-//
-//                    latLngArrayList = new ArrayList<>();
-//                    int h = ((org.locationtech.jts.geom.Polygon) g).getNumInteriorRing();
-//                    for (int hole = 0; hole < h; hole++)
-//                    {
-//                        for (Coordinate coordinate : ((org.locationtech.jts.geom.Polygon) g).getInteriorRingN(hole).getCoordinates()) {
-//                            latLngArrayList.add(coordinatemetric2LatLng(coordinate));
-//                        }
-//                        options.addHole(latLngArrayList);
-//                    }
-//
-//                    polygons.add(map.addPolygon(options));
-//                }
-//            }
-//
-//            number = searchingArea.getNumGeometries();
-//            for (int i = 0; i < number; i++) {
-//                Geometry g = searchingArea.getGeometryN(i);
-//                if (org.locationtech.jts.geom.Polygon.class == g.getClass())
-//                {
-//                    ArrayList<LatLng> latLngArrayList = new ArrayList<>();
-//
-//                    for (Coordinate coordinate : ((org.locationtech.jts.geom.Polygon) g).getExteriorRing().getCoordinates()) {
-//                        latLngArrayList.add(coordinatemetric2LatLng(coordinate));
-//                    }
-//
-//                    PolygonOptions options = new PolygonOptions()
-//                            .addAll(latLngArrayList)
-//                            .fillColor(Color.argb(50, 200, 0, 0))
-//                            //.strokeColor(Color.TRANSPARENT)
-//                            //.strokeWidth(0)
-//                            .zIndex(-1000000000000000000000f);
-//
-//                    latLngArrayList = new ArrayList<>();
-//                    int h = ((org.locationtech.jts.geom.Polygon) g).getNumInteriorRing();
-//                    for (int hole = 0; hole < h; hole++)
-//                    {
-//                        for (Coordinate coordinate : ((org.locationtech.jts.geom.Polygon) g).getInteriorRingN(h).getCoordinates()) {
-//                            latLngArrayList.add(coordinatemetric2LatLng(coordinate));
-//                        }
-//                        options.addHole(latLngArrayList);
-//                    }
-//
-//                    polygons.add(map.addPolygon(options));
-//                }
-//            }
-//        }
     }
 
     private class Member {
@@ -677,11 +481,6 @@ public class MapViewActivity extends AppCompatActivity implements
                     return;
                 }
 
-//                for (Polygon polygon : polygons) {
-//                    polygon.remove();
-//                }
-//                polygons.clear();
-
                 if (null != polygon)
                 {
                     polygon.remove();
@@ -742,9 +541,7 @@ public class MapViewActivity extends AppCompatActivity implements
         private double getSearchRadius(long now) {
             Calendar c = Calendar.getInstance();
             c.setTime(new Date(now));
-            //return (height * 0.22d + 11.0d) * (((c.get(Calendar.HOUR_OF_DAY) + 5) % 24 < 12 ) ? (3d / 2d) : 1);
-
-            return 18;
+            return (height * 0.22d + 11.0d) * (((c.get(Calendar.HOUR_OF_DAY) + 5) % 24 < 12 ) ? (3d / 2d) : 1);
         }
 
         public final double time_lost() {
@@ -785,13 +582,6 @@ public class MapViewActivity extends AppCompatActivity implements
         public void run() {
             long now_Device = SystemClock.elapsedRealtime();
             long now_LocalTime = now_Device - epoch_Device + epoch_LocalTime;
-//            //myRoom.updateSearchArea();
-//            runOnUiThread(new Runnable() {
-//                @Override
-//                public void run() {
-//                    myRoom.drawArea();
-//                }
-//            });
             myRoom.updateTraces(now_LocalTime);
         }
     };
@@ -844,32 +634,6 @@ public class MapViewActivity extends AppCompatActivity implements
         t2 = new Timer();
         t1.schedule(task_drawingPaths, 500, pathRenewingPeriod);
         t2.schedule(task_drawingArea, 1500, AreaRenewingPeriod);
-
-//        // test code
-//
-//        double latitude = 37.3d;
-//        double longitude = 127d;
-//        double diameterInMeters = 20000d; //20km
-//
-//        GeometricShapeFactory shapeFactory = new GeometricShapeFactory();
-//        shapeFactory.setNumPoints(64); // adjustable
-//        shapeFactory.setCentre(new Coordinate(latitude, longitude));
-//
-//        shapeFactory.setHeight(diameterInMeters * 1.255d / 111320d);
-//        shapeFactory.setWidth(diameterInMeters * 1.255d * (40075000 * Math.cos(Math.toRadians(latitude)) / 360) / 111320d / 111320d);
-//
-//        Polygon circle = shapeFactory.createEllipse();
-//
-//        List<Coordinate> coordinates = new ArrayList<>(Arrays.asList(circle.getCoordinates()));
-//
-//        PolygonOptions options = new PolygonOptions().strokeColor(Color.RED);
-//
-//        for (Coordinate coordinate : coordinates) {
-//            options.add(new LatLng(coordinate.getX(), coordinate.getY()));
-//        }
-//
-//        map.addPolygon(options);
-//        map.addCircle(new CircleOptions().center(new LatLng(latitude, longitude)).radius(diameterInMeters / 2));
     }
 
     @Override
@@ -989,18 +753,6 @@ public class MapViewActivity extends AppCompatActivity implements
 
     public void sendGPS(long now, MyLocation locData) {
         myRef.child("RoomNumber").child("MyLocation").child(myUID).child(Long.toString(now)).setValue(locData);
-    }
-
-    public Coordinate coordinateLatLng2metric(LatLng latLng) {
-        return new Coordinate(
-                latLng.longitude * (1 / 1.255d / (40075000 * Math.cos(Math.toRadians(latLng.latitude)) / 360) * 111320d * 111320d),
-                latLng.latitude * (1 / 1.255d * 111320d));
-    }
-
-    public LatLng coordinatemetric2LatLng(Coordinate coordinate) {
-        return new LatLng(
-                coordinate.getY() * (1.255d / 111320d),
-                coordinate.getX() * (1.255d * (40075000 * Math.cos(Math.toRadians(coordinate.getY() * (1.255d / 111320d))) / 360) / 111320d / 111320d));
     }
 
     public List<LatLng> createCircleLatLngList(LatLng center, double radius) {
