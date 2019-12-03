@@ -24,22 +24,31 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AfterLogin extends Activity {
+    private Button btn_logout;
     private Button createroom;
     private Button joinroom;
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.after_login);
-        Intent intentgetter = getIntent();
-        TextView info = (TextView) findViewById(R.id.id_info);
-        String userID = intentgetter.getStringExtra("id");
-        info.setText(userID);
 
-        final ImageButton createroom = (ImageButton) findViewById(R.id.createroom); //Map_open 으로 연결되게만 우선 해둠
+        btn_logout = findViewById(R.id.btn_logout);
+        btn_logout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(AfterLogin.this, LoginActivity.class);
+                intent.putExtra("logout", true);
+                startActivity(intent);
+                finish();
+            }
+        });
+
+        final ImageButton createroom = (ImageButton) findViewById(R.id.createroom); //Map_open 으로 연결되게 해놓음
+
         createroom.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(AfterLogin.this, MapViewActivity.class);
-                intent.putExtra("uid", userID);
+                intent.putExtra("master", true);
                 startActivity(intent);
             }
         });
@@ -78,3 +87,4 @@ public class AfterLogin extends Activity {
     }
 
 }
+

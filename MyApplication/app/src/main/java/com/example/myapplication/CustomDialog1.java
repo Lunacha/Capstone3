@@ -15,7 +15,7 @@ public class CustomDialog1 {
 
     public void callFunction() {
 
-        final Dialog dlg = new Dialog(context);
+        final Dialog dlg = new Dialog(this.context);
 
         dlg.setContentView(R.layout.custom_dialog1);
 
@@ -27,7 +27,7 @@ public class CustomDialog1 {
         childinfo.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                CustomDialog2 tmp = new CustomDialog2(view.getContext());
+                CustomDialog2 tmp = new CustomDialog2(context);
                 tmp.callFunction();
                 dlg.dismiss();
             }
@@ -36,7 +36,7 @@ public class CustomDialog1 {
         elderinfo.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                CustomDialog3 tmp = new CustomDialog3(view.getContext());
+                CustomDialog3 tmp = new CustomDialog3(context);
                 tmp.callFunction();
                 dlg.dismiss();
             }

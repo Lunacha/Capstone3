@@ -17,27 +17,29 @@ public class CustomDialog2 {
         this.context = context;
     }
 
-    public double speed = 0;
-
     public void callFunction() {
         final Dialog dlg = new Dialog(context);
         dlg.setContentView(R.layout.custom_dialog2);
         dlg.show();
 
-        final EditText edittext = dlg.findViewById(R.id.edittext);
-        final ImageButton submitinfo = (ImageButton)dlg.findViewById(R.id.btn_submit);
-        int targetheight;
-        int hour, min;
-        TimePicker time = (TimePicker)dlg.findViewById(R.id.losttime);
-        targetheight = Integer.parseInt(edittext.getText().toString());
-        hour = time.getHour();
-        min = time.getMinute();
 
-        speed = (float)targetheight - 0.16;
+        final ImageButton submitinfo = (ImageButton)dlg.findViewById(R.id.btn_submit);
 
         submitinfo.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                int targetheight;
+                int hour, min;
+                double speed;
+
+                final EditText edittext = dlg.findViewById(R.id.edittext);
+                targetheight = Integer.parseInt(edittext.getText().toString());
+                TimePicker time = (TimePicker)dlg.findViewById(R.id.losttime);
+
+                speed = (float)targetheight - 0.16;
+                hour = time.getHour();
+                min = time.getMinute();
+
                 Intent intent = new Intent(view.getContext(), CustomDialog4.class);
                 context.startActivity(intent);
                 dlg.dismiss();

@@ -1,6 +1,7 @@
 package com.example.myapplication;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
@@ -601,6 +602,13 @@ public class MapViewActivity extends AppCompatActivity implements
             Bundle savedInstanceState) {
         Log.i(LOG_TAG, "onCreate called.");
         super.onCreate(savedInstanceState);
+
+        Intent intent = getIntent();
+        boolean ifmaster = intent.getBooleanExtra("master", false);
+        if(ifmaster == true) {
+            CustomDialog1 tmp = new CustomDialog1(MapViewActivity.this);
+            tmp.callFunction();
+        }
 
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);

@@ -31,14 +31,7 @@ public class CustomDialog3{
         dlg.setContentView(R.layout.custom_dialog3);
         dlg.show();
 
-        final EditText edittext = dlg.findViewById(R.id.edittext);
         final ImageButton submitinfo = (ImageButton) dlg.findViewById(R.id.cd3button);
-        String targetheight;
-        int hour, min;
-        TimePicker time = (TimePicker) dlg.findViewById(R.id.losttime);
-        targetheight = edittext.getText().toString();
-        hour = time.getHour();
-        min = time.getMinute();
 
         seekbar = (SeekBar) dlg.findViewById(R.id.seekbar);
         outcome = (TextView) dlg.findViewById(R.id.seekbartext);
@@ -66,6 +59,18 @@ public class CustomDialog3{
         submitinfo.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                int targetheight;
+                int hour, min;
+                double speed;
+
+                final EditText edittext = dlg.findViewById(R.id.edittext);
+                targetheight = Integer.parseInt(edittext.getText().toString());
+                TimePicker time = (TimePicker)dlg.findViewById(R.id.losttime);
+
+                speed = (float)targetheight - 0.16;
+                hour = time.getHour();
+                min = time.getMinute();
+
                 Intent intent = new Intent(view.getContext(), CustomDialog4.class);
                 context.startActivity(intent);
                 dlg.dismiss();
