@@ -99,7 +99,7 @@ public class MapViewActivity extends AppCompatActivity implements
         private Target target;
         final private Vector<Member> members = new Vector<>();
 
-        private Polygon searchingArea = null;
+        private Circle searchingArea = null;
 
         final private ChildEventListener roomListener = new ChildEventListener() {
             @Override
@@ -197,20 +197,17 @@ public class MapViewActivity extends AppCompatActivity implements
         void drawSearchingArea(long now) {
             if (null == searchingArea)
             {
-                searchingArea = map.addPolygon(new PolygonOptions()
+                searchingArea = map.addCircle(new CircleOptions()
                         .zIndex(-100000000000000000000000000000f)
                         .fillColor(Color.argb(50, 50, 50, 50))
-                        .addAll(createCircleLatLngList(target.location_lost, target.getSpeed() * (now - target.getLostTime()) / 1000d)));
+                        .center(target.location_lost)
+                        .radius(target.getSpeed() * (now - target.getLostTime()) / 1000d));
             }
             else
             {
                 synchronized (searchingArea)
                 {
-                    searchingArea.remove();
-                    searchingArea = map.addPolygon(new PolygonOptions()
-                            .zIndex(-100000000000000000000000000000f)
-                            .fillColor(Color.argb(50, 50, 50, 50))
-                            .addAll(createCircleLatLngList(target.location_lost, target.getSpeed() * (now - target.getLostTime()) / 1000d)));
+                    searchingArea.setRadius(target.getSpeed() * (now - target.getLostTime()) / 1000d);
                 }
             }
         }
@@ -277,22 +274,23 @@ public class MapViewActivity extends AppCompatActivity implements
                     trace.put(new Date(time_latest), new LatLng(lat_latest, lon_latest));
                 }
 
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (null == headMarker) {
-                            headMarker = map.addCircle(new CircleOptions()
-                                    .center(new LatLng(0, 0))
-                                    .radius(15)
-                                    .fillColor(lineColor)
-                                    .zIndex(zIndex)
-                                    .visible(false));
-                        }
-                        synchronized (headMarker) {
+                if (!(uID.equals(myUID)))
+                {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (null == headMarker) {
+                                headMarker = map.addCircle(new CircleOptions()
+                                        .center(new LatLng(0, 0))
+                                        .radius(15)
+                                        .fillColor(lineColor)
+                                        .zIndex(zIndex)
+                                        .visible(false));
+                            }
                             headMarker.setCenter(new LatLng(lat_latest, lon_latest));
                         }
-                    }
-                });
+                    });
+                }
             }
 
             @Override

@@ -46,7 +46,9 @@ public class TargetLocationActivity extends AppCompatActivity implements
 
     TargetInfo targetInfo = null;
 
-    Marker m;
+    Marker m = null;
+
+    long targetTime;
 
     @Override
     protected void onCreate(
@@ -54,6 +56,23 @@ public class TargetLocationActivity extends AppCompatActivity implements
         Log.i(LOG_TAG, "onCreate called.");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.target_confirm);
+
+        Calendar c = Calendar.getInstance();
+        c.setTime(new Date(System.currentTimeMillis()));
+        long time_lost_LONG = getIntent().getLongExtra("time_lost", -1);
+        long epoch_Today
+                = c.getTimeInMillis()
+                - (c.get(Calendar.HOUR_OF_DAY) * 3600)
+                - (c.get(Calendar.MINUTE) * 60000)
+                - (c.get(Calendar.SECOND) * 1000)
+                - c.get(Calendar.MILLISECOND);
+
+        targetTime = epoch_Today + time_lost_LONG;
+        if (targetTime >= c.getTimeInMillis())
+        {
+            targetTime -= 24 * 3600 * 1000;
+            Log.w(LOG_TAG, "Your choice means yesterday, doesn't it?");
+        }
 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
@@ -91,32 +110,22 @@ public class TargetLocationActivity extends AppCompatActivity implements
         map = googleMap;
         map.animateCamera(CameraUpdateFactory.newLatLng(new LatLng(37.3d, 127d)));
 
-        m = map.addMarker(new MarkerOptions().visible(false));
-
         map.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
             @Override
             public void onMapClick(LatLng point) {
                 TargetInfo t = new TargetInfo();
 
-                long time_lost_LONG = getIntent().getLongExtra("time_lost", -1);
 
-                Calendar c = Calendar.getInstance();
-                c.setTime(new Date(System.currentTimeMillis()));
-                long epoch_Today
-                        = c.getTimeInMillis()
-                        - ((((c.get(Calendar.HOUR_OF_DAY) * 60) + c.get(Calendar.MINUTE)) * 60) + c.get(Calendar.SECOND) * 1000 + c.get(Calendar.MILLISECOND));
-
-                t.time = epoch_Today + time_lost_LONG;
-                if (epoch_Today + time_lost_LONG >= c.getTimeInMillis())
-                {
-                    t.time -= 24 * 3600 * 1000;
-                }
+                t.time = targetTime;
                 t.height = getIntent().getIntExtra("height", -1) / 100d;
                 t.speed = getIntent().getDoubleExtra("speed", -1);
                 t.location = point;
                 targetInfo = t;
+                if (null == m)
+                {
+                    m = map.addMarker(new MarkerOptions().position(point));
+                }
                 m.setPosition(point);
-                m.setVisible(true);
             }
         });
     }
