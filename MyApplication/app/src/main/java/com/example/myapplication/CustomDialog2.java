@@ -6,7 +6,10 @@ import android.content.Intent;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TimePicker;
+import android.util.DisplayMetrics;
+import java.util.Date;
 
 
 public class CustomDialog2 {
@@ -18,10 +21,17 @@ public class CustomDialog2 {
     }
 
     public void callFunction() {
+
         final Dialog dlg = new Dialog(context);
         dlg.setContentView(R.layout.custom_dialog2);
-        dlg.show();
 
+        DisplayMetrics metrics = context.getResources().getDisplayMetrics();
+        int width = metrics.widthPixels;
+        ImageView a  = dlg.findViewById(R.id.title);
+        a.getLayoutParams().width = width;
+        a.requestLayout();
+
+        dlg.show();
 
         final ImageButton submitinfo = (ImageButton)dlg.findViewById(R.id.btn_submit);
 
@@ -31,6 +41,7 @@ public class CustomDialog2 {
                 int targetheight;
                 int hour, min;
                 double speed;
+                long pasttime;
 
                 final EditText edittext = dlg.findViewById(R.id.edittext);
                 targetheight = Integer.parseInt(edittext.getText().toString());
@@ -39,11 +50,15 @@ public class CustomDialog2 {
                 speed = (float)targetheight - 0.16;
                 hour = time.getHour();
                 min = time.getMinute();
+                pasttime = hour * 3600000 + min * 60000;
 
-                Intent intent = new Intent(view.getContext(), CustomDialog4.class);
+
+                Intent intent = new Intent(view.getContext(), TargetLocationActivity.class);
+                intent.putExtra("height", targetheight);
+                intent.putExtra("speed", speed);
+                intent.putExtra("time_lost", pasttime);
                 context.startActivity(intent);
                 dlg.dismiss();
-                //targetheight, speed, hour, min 서버전송
             }
         });
     }

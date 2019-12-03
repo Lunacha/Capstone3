@@ -48,10 +48,8 @@ public class AfterLogin extends Activity {
         createroom.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(AfterLogin.this, MapViewActivity.class);
-                intent.putExtra("master", true);
-                intent.putExtra("uid", userID);
-                startActivity(intent);
+                CustomDialog1 customDialog = new CustomDialog1(AfterLogin.this);
+                customDialog.callFunction();
             }
         });
 
