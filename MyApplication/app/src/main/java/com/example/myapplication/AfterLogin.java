@@ -49,7 +49,7 @@ public class AfterLogin extends Activity {
             @Override
             public void onClick(View view) {
                 CustomDialog1 customDialog = new CustomDialog1(AfterLogin.this);
-                customDialog.callFunction();
+                customDialog.callFunction(userID);
             }
         });
 

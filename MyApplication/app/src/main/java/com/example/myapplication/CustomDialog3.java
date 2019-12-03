@@ -29,7 +29,7 @@ public class CustomDialog3{
     TextView outcome;
     public double number = 0;
 
-    public void callFunction() {
+    public void callFunction(String userID) {
 
         final Dialog dlg = new Dialog(context);
         dlg.setContentView(R.layout.custom_dialog3);
@@ -88,6 +88,7 @@ public class CustomDialog3{
                 pasttime = hour * 3600000 + min * 60000;
 
                 Intent intent = new Intent(view.getContext(), TargetLocationActivity.class);
+                intent.putExtra("uid", userID);
                 intent.putExtra("height", targetheight);
                 intent.putExtra("speed", number);
                 intent.putExtra("time_lost", pasttime);
