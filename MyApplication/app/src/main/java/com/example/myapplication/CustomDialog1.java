@@ -13,7 +13,7 @@ public class CustomDialog1 {
         this.context = context;
     }
 
-    public void callFunction() {
+    public void callFunction(String userID) {
 
         final Dialog dlg = new Dialog(this.context);
 
@@ -28,7 +28,7 @@ public class CustomDialog1 {
             @Override
             public void onClick(View view) {
                 CustomDialog2 tmp = new CustomDialog2(context);
-                tmp.callFunction();
+                tmp.callFunction(userID);
                 dlg.dismiss();
             }
         });
@@ -37,7 +37,7 @@ public class CustomDialog1 {
             @Override
             public void onClick(View view) {
                 CustomDialog3 tmp = new CustomDialog3(context);
-                tmp.callFunction();
+                tmp.callFunction(userID);
                 dlg.dismiss();
             }
         });

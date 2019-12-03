@@ -20,7 +20,7 @@ public class CustomDialog2 {
         this.context = context;
     }
 
-    public void callFunction() {
+    public void callFunction(String userID) {
 
         final Dialog dlg = new Dialog(context);
         dlg.setContentView(R.layout.custom_dialog2);
@@ -54,6 +54,7 @@ public class CustomDialog2 {
 
 
                 Intent intent = new Intent(view.getContext(), TargetLocationActivity.class);
+                intent.putExtra("uid", userID);
                 intent.putExtra("height", targetheight);
                 intent.putExtra("speed", speed);
                 intent.putExtra("time_lost", pasttime);
