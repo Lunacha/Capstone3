@@ -17,6 +17,9 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
+import java.util.Calendar;
+import java.util.Date;
+
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -92,7 +95,20 @@ public class TargetLocationActivity extends AppCompatActivity implements
             @Override
             public void onMapClick(LatLng point) {
                 TargetInfo t = new TargetInfo();
-                t.time = (getIntent().getLongExtra("time_lost", -1));
+
+                long time_lost_LONG = getIntent().getLongExtra("time_lost", -1);
+
+                Calendar c = Calendar.getInstance();
+                c.setTime(new Date(System.currentTimeMillis()));
+                long epoch_Today
+                        = c.getTimeInMillis()
+                        - ((((c.get(Calendar.HOUR_OF_DAY) * 60) + c.get(Calendar.MINUTE)) * 60) + c.get(Calendar.SECOND) * 1000 + c.get(Calendar.MILLISECOND));
+
+                t.time = epoch_Today + time_lost_LONG;
+                if (epoch_Today + time_lost_LONG >= c.getTimeInMillis())
+                {
+                    t.time -= 24 * 3600 * 1000;
+                }
                 t.height = getIntent().getIntExtra("height", -1) / 100d;
                 t.speed = getIntent().getDoubleExtra("speed", -1);
                 t.location = point;
