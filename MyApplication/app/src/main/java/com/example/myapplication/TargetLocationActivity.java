@@ -1,11 +1,12 @@
 package com.example.myapplication;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.location.Location;
 import android.os.Bundle;
-import android.os.SystemClock;
 import android.util.Log;
+import android.view.View;
+import android.widget.ImageButton;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -15,8 +16,6 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-
-import java.util.Date;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -30,12 +29,20 @@ public class TargetLocationActivity extends AppCompatActivity implements
     private static final String[] REQUIRED_PERMISSIONS  = { Manifest.permission.ACCESS_FINE_LOCATION };
     private static final String LOG_TAG = "TargetLocationActivity";
 
-    private String myUID = null;
-
     private GoogleMap map;
 
     private FirebaseDatabase mdatabase = FirebaseDatabase.getInstance();
     private DatabaseReference myRef = mdatabase.getReference();
+
+    class TargetInfo
+    {
+        public long time;
+        public double height;
+        public double speed;
+        public LatLng location;
+    }
+
+    TargetInfo targetInfo = null;
 
     @Override
     protected void onCreate(
@@ -44,26 +51,54 @@ public class TargetLocationActivity extends AppCompatActivity implements
         super.onCreate(savedInstanceState);
         setContentView(R.layout.target_confirm);
 
-        myUID = getIntent().getStringExtra("uid");
-
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
-//        myRef.child("RoomNumber").child("Target").child("time").setValue(1574575032014L);
-//        myRef.child("RoomNumber").child("Target").child("height").setValue(1.2d);
-//        myRef.child("RoomNumber").child("Target").child("speed").setValue(0.0007d);
-//        myRef.child("RoomNumber").child("Target").child("latitude").setValue(37.2937d);
-//        myRef.child("RoomNumber").child("Target").child("longitude").setValue(126.97491d);
+        final ImageButton confirmButton = findViewById(R.id.confirm);
+
+        confirmButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                switch (v.getId()) {
+                    case R.id.confirm:
+                        if (null == targetInfo)
+                        {
+                            return;
+                        }
+                        synchronized (targetInfo) {
+                            myRef.child("RoomNumber").child("Target").child("time").setValue(targetInfo.time);
+                            myRef.child("RoomNumber").child("Target").child("height").setValue(targetInfo.height);
+                            myRef.child("RoomNumber").child("Target").child("speed").setValue(targetInfo.speed);
+                            myRef.child("RoomNumber").child("Target").child("latitude").setValue(targetInfo.location.latitude);
+                            myRef.child("RoomNumber").child("Target").child("longitude").setValue(targetInfo.location.longitude);
+                        }
+                        Intent intent = new Intent(TargetLocationActivity.this, MapViewActivity.class);
+                        intent.putExtra("uid", getIntent().getStringExtra("uid"));
+                        startActivity(intent);
+                        finish();
+                }
+            }
+        });
     }
 
     @Override
     public void onMapReady(
             final GoogleMap googleMap) {
         map = googleMap;
-        map.getUiSettings().setMyLocationButtonEnabled(false);
-        checkRunTimePermission();
-        map.animateCamera(CameraUpdateFactory.zoomTo(10f));
         map.animateCamera(CameraUpdateFactory.newLatLng(new LatLng(37.3d, 127d)));
+        checkRunTimePermission();
+
+        map.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+            @Override
+            public void onMapClick(LatLng point) {
+                TargetInfo t = new TargetInfo();
+                t.time = (getIntent().getLongExtra("time_lost", -1));
+                t.height = getIntent().getIntExtra("height", -1) / 100d;
+                t.speed = getIntent().getDoubleExtra("speed", -1);
+                t.location = point;
+                targetInfo = t;
+            }
+        });
     }
 
     @Override
@@ -73,6 +108,7 @@ public class TargetLocationActivity extends AppCompatActivity implements
 
         map = null;
     }
+
 
     @Override
     public void onRequestPermissionsResult(

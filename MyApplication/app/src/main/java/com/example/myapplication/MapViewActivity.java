@@ -23,6 +23,8 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.Circle;
+import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.JointType;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -97,9 +99,7 @@ public class MapViewActivity extends AppCompatActivity implements
         private Target target;
         final private Vector<Member> members = new Vector<>();
 
-        final private Vector<Polygon> polygons = new Vector<>();
-
-        private Geometry searchedAreaByMember = new GeometryFactory().createMultiPolygon(null);
+        private Polygon searchingArea = null;
 
         final private ChildEventListener roomListener = new ChildEventListener() {
             @Override
@@ -194,6 +194,28 @@ public class MapViewActivity extends AppCompatActivity implements
         }
 
         @UiThread
+        void drawSearchingArea(long now) {
+            if (null == searchingArea)
+            {
+                searchingArea = map.addPolygon(new PolygonOptions()
+                        .zIndex(-100000000000000000000000000000f)
+                        .fillColor(Color.argb(50, 50, 50, 50))
+                        .addAll(createCircleLatLngList(target.location_lost, target.getSpeed() * (now - target.getLostTime()) / 1000d)));
+            }
+            else
+            {
+                synchronized (searchingArea)
+                {
+                    searchingArea.remove();
+                    searchingArea = map.addPolygon(new PolygonOptions()
+                            .zIndex(-100000000000000000000000000000f)
+                            .fillColor(Color.argb(50, 50, 50, 50))
+                            .addAll(createCircleLatLngList(target.location_lost, target.getSpeed() * (now - target.getLostTime()) / 1000d)));
+                }
+            }
+        }
+
+        @UiThread
         void drawTraces(long now) {
             Log.i(LOG_TAG, "Drawing Traces.");
             try {
@@ -228,12 +250,12 @@ public class MapViewActivity extends AppCompatActivity implements
         private int lineColor;
         private float zIndex;
         private Vector<Polyline> polylines;
+        private Circle headMarker = null;
         private com.google.android.gms.maps.model.Polygon polygon = null;
 
         Geometry searchArea = null;
 
-        final private TreeMap<Date, LatLng> trace = new TreeMap<>();;
-        private int lastlyUpdatedLatLngIndex = -1;
+        final private TreeMap<Date, LatLng> trace = new TreeMap<>();
 
         final private ChildEventListener userListener = new ChildEventListener() {
             @Override
@@ -254,6 +276,23 @@ public class MapViewActivity extends AppCompatActivity implements
                 synchronized (trace) {
                     trace.put(new Date(time_latest), new LatLng(lat_latest, lon_latest));
                 }
+
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (null == headMarker) {
+                            headMarker = map.addCircle(new CircleOptions()
+                                    .center(new LatLng(0, 0))
+                                    .radius(15)
+                                    .fillColor(lineColor)
+                                    .zIndex(zIndex)
+                                    .visible(false));
+                        }
+                        synchronized (headMarker) {
+                            headMarker.setCenter(new LatLng(lat_latest, lon_latest));
+                        }
+                    }
+                });
             }
 
             @Override
@@ -305,6 +344,13 @@ public class MapViewActivity extends AppCompatActivity implements
             for(Polyline l : polylines)
             {
                 l.remove();
+            }
+
+            if (null != headMarker)
+            {
+                synchronized (headMarker) {
+                    headMarker.remove();
+                }
             }
 
             Log.i(LOG_TAG, String.format("user was removed from your room: %s", uID));
@@ -426,7 +472,7 @@ public class MapViewActivity extends AppCompatActivity implements
 
                 PolygonOptions options = new PolygonOptions()
                         .zIndex(zIndex)
-                        //.strokeColor(Color.TRANSPARENT)
+                        .strokeColor(Color.TRANSPARENT)
                         .fillColor(Color.argb(80, Color.red(lineColor), Color.green(lineColor), Color.blue(lineColor)));
 
                 ArrayList<Coordinate> arr;
@@ -511,6 +557,7 @@ public class MapViewActivity extends AppCompatActivity implements
                 @Override
                 public void run() {
                     myRoom.drawTraces(now_LocalTime);
+                    myRoom.drawSearchingArea(now_LocalTime);
                 }
             });
         }
@@ -557,12 +604,6 @@ public class MapViewActivity extends AppCompatActivity implements
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
-        myRef.child("RoomNumber").child("Target").child("time").setValue(1574575032014L);
-        myRef.child("RoomNumber").child("Target").child("height").setValue(1.2d);
-        myRef.child("RoomNumber").child("Target").child("speed").setValue(0.0007d);
-        myRef.child("RoomNumber").child("Target").child("latitude").setValue(37.2937d);
-        myRef.child("RoomNumber").child("Target").child("longitude").setValue(126.97491d);
-
         myRoom = new Room("RoomNumber");
     }
 
@@ -572,7 +613,6 @@ public class MapViewActivity extends AppCompatActivity implements
         map = googleMap;
         map.getUiSettings().setMyLocationButtonEnabled(false);
         checkRunTimePermission();
-        map.animateCamera(CameraUpdateFactory.zoomTo(10f));
         map.animateCamera(CameraUpdateFactory.newLatLng(new LatLng(37.3d, 127d)));
 
         t1 = new Timer();
