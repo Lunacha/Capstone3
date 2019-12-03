@@ -31,9 +31,9 @@
 
         <activity android:name=".LoginActivity"
             android:screenOrientation="portrait"/>
-        <activity android:name=".MainActivity"
-            android:screenOrientation="portrait"/>
         <activity android:name=".AfterLogin"
+            android:screenOrientation="portrait"/>
+        <activity android:name=".TargetLocationActivity"
             android:screenOrientation="portrait"/>
         <activity android:name=".MapViewActivity"
             android:screenOrientation="portrait"/>

@@ -44,11 +44,13 @@ public class AfterLogin extends Activity {
 
         final ImageButton createroom = (ImageButton) findViewById(R.id.createroom); //Map_open 으로 연결되게 해놓음
 
+        final String userID = getIntent().getStringExtra("id");
         createroom.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(AfterLogin.this, MapViewActivity.class);
                 intent.putExtra("master", true);
+                intent.putExtra("uid", userID);
                 startActivity(intent);
             }
         });

@@ -97,9 +97,6 @@ public class MapViewActivity extends AppCompatActivity implements
         private Target target;
         final private Vector<Member> members = new Vector<>();
 
-        private Geometry searchingArea = null;
-        private long modifiedTime = 0;
-
         final private Vector<Polygon> polygons = new Vector<>();
 
         private Geometry searchedAreaByMember = new GeometryFactory().createMultiPolygon(null);
@@ -157,11 +154,7 @@ public class MapViewActivity extends AppCompatActivity implements
 
                 List<Coordinate> coords = convertLatLngList2CoordinateList(list);
 
-                searchingArea = fact.createPolygon(coords.toArray(new Coordinate[0]));
-
                 target = new Target(time_lost, height, speed, new LatLng(lat_lost, lon_lost));
-
-                modifiedTime = time_lost;
 
                 map.setOnMyLocationChangeListener(MapViewActivity.this::onLocationChanged); // WARNING: DEPRECATED
 
@@ -215,7 +208,7 @@ public class MapViewActivity extends AppCompatActivity implements
             }
         }
 
-        void updateTraces(long now) {
+        void updateSearchedAreas(long now) {
             Log.i(LOG_TAG, "Drawing Traces.");
             try {
                 for (Member m : members) {
@@ -227,38 +220,6 @@ public class MapViewActivity extends AppCompatActivity implements
                 //
             }
         }
-
-        Pair<Member, Pair<Map.Entry<Long, LatLng>, Map.Entry<Long, LatLng>>> getInfoToUpdate() {
-            Member memberToUpdateArea = null;
-            Map.Entry<Long, LatLng> entryPrev = null;
-            Map.Entry<Long, LatLng> entry = null;
-            long timer = 9223372036854775807L;
-
-            for (Member member : members) {
-                Pair<Map.Entry<Long, LatLng>, Map.Entry<Long, LatLng>> pair = member.getEntriesToUpdateArea();
-
-                if (null == pair)
-                {
-                    continue;
-                }
-
-                entryPrev = pair.first;
-                entry = pair.second;
-
-                if (null == entry)
-                {
-                    continue;
-                }
-
-                if (timer > entry.getKey()) {
-                    memberToUpdateArea = member;
-                    timer = entry.getKey();
-                }
-            }
-
-            return (null == memberToUpdateArea) ? null : new Pair<>(memberToUpdateArea, new Pair<>(entryPrev, entry));
-        }
-
     }
 
     private class Member {
@@ -372,30 +333,6 @@ public class MapViewActivity extends AppCompatActivity implements
                     polylines.get(traceClassifierPicker).setPoints(points);
                 }
             }
-        }
-
-        private Pair<Map.Entry<Long, LatLng>, Map.Entry<Long, LatLng>> getEntriesToUpdateArea() {
-            Map.Entry<Long, LatLng> entryPrev = null;
-            Map.Entry<Long, LatLng> entry;
-            synchronized (trace)
-            {
-                if (!(trace.size() > lastlyUpdatedLatLngIndex + 1))
-                {
-                    return null;
-                }
-
-                if (0 < lastlyUpdatedLatLngIndex)
-                {
-                    entryPrev = new AbstractMap.SimpleEntry<>(
-                            ((Date)(trace.keySet().toArray()[lastlyUpdatedLatLngIndex])).getTime(),
-                            (LatLng)(trace.values().toArray()[lastlyUpdatedLatLngIndex]));
-                }
-
-                entry = new AbstractMap.SimpleEntry<>(
-                        ((Date)(trace.keySet().toArray()[lastlyUpdatedLatLngIndex + 1])).getTime(),
-                        (LatLng)(trace.values().toArray()[lastlyUpdatedLatLngIndex + 1]));
-            }
-            return new Pair<>(entryPrev, entry);
         }
 
         public final String getUID() {
@@ -545,7 +482,7 @@ public class MapViewActivity extends AppCompatActivity implements
             return (height * 0.22d + 11.0d) * (((c.get(Calendar.HOUR_OF_DAY) + 5) % 24 < 12 ) ? (3d / 2d) : 1);
         }
 
-        public final double time_lost() {
+        public final double getLostTime() {
             return time_lost;
         }
 
@@ -583,7 +520,7 @@ public class MapViewActivity extends AppCompatActivity implements
         public void run() {
             long now_Device = SystemClock.elapsedRealtime();
             long now_LocalTime = now_Device - epoch_Device + epoch_LocalTime;
-            myRoom.updateTraces(now_LocalTime);
+            myRoom.updateSearchedAreas(now_LocalTime);
         }
     };
 
