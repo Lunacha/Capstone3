@@ -337,7 +337,7 @@ public class MapViewActivity extends AppCompatActivity implements
 
         @UiThread
         private void fin() {
-            myRef.child("RoomNumber").child("MyLocation").child(uID).removeEventListener(userListener);
+            myRef.child(myRoom.rID).child("MyLocation").child(uID).removeEventListener(userListener);
 
             for(Polyline l : polylines)
             {
@@ -595,7 +595,7 @@ public class MapViewActivity extends AppCompatActivity implements
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
-        myRoom = new Room("RoomNumber");
+        myRoom = new Room(getIntent().getStringExtra("room"));
     }
 
     @Override
@@ -728,7 +728,7 @@ public class MapViewActivity extends AppCompatActivity implements
     }
 
     public void sendGPS(long now, MyLocation locData) {
-        myRef.child("RoomNumber").child("MyLocation").child(myUID).child(Long.toString(now)).setValue(locData);
+        myRef.child(myRoom.rID).child("MyLocation").child(myUID).child(Long.toString(now)).setValue(locData);
     }
 
     public List<LatLng> createCircleLatLngList(LatLng center, double radius) {

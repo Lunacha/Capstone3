@@ -1,6 +1,8 @@
 package com.example.myapplication;
 
 import android.Manifest;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -21,6 +23,7 @@ import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.Calendar;
 import java.util.Date;
+import java.util.UUID;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -35,14 +38,6 @@ public class TargetLocationActivity extends AppCompatActivity implements
 
     private FirebaseDatabase mdatabase = FirebaseDatabase.getInstance();
     private DatabaseReference myRef = mdatabase.getReference();
-
-    class TargetInfo
-    {
-        public long time;
-        public double height;
-        public double speed;
-        public LatLng location;
-    }
 
     TargetInfo targetInfo = null;
 
@@ -88,15 +83,21 @@ public class TargetLocationActivity extends AppCompatActivity implements
                         {
                             return;
                         }
+                        String RoomNumber = UUID.randomUUID().toString();
+                        ClipboardManager clipboardManager = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+                        ClipData clipData = ClipData.newPlainText("RoomNumber",RoomNumber);
+                        clipboardManager.setPrimaryClip(clipData);
+                        Toast.makeText(getApplicationContext(),"Room Code가 복사되었습니다.",Toast.LENGTH_SHORT).show();
                         synchronized (targetInfo) {
-                            myRef.child("RoomNumber").child("Target").child("time").setValue(targetInfo.time);
-                            myRef.child("RoomNumber").child("Target").child("height").setValue(targetInfo.height);
-                            myRef.child("RoomNumber").child("Target").child("speed").setValue(targetInfo.speed);
-                            myRef.child("RoomNumber").child("Target").child("latitude").setValue(targetInfo.location.latitude);
-                            myRef.child("RoomNumber").child("Target").child("longitude").setValue(targetInfo.location.longitude);
+                            myRef.child(RoomNumber).child("Target").child("time").setValue(targetInfo.time);
+                            myRef.child(RoomNumber).child("Target").child("height").setValue(targetInfo.height);
+                            myRef.child(RoomNumber).child("Target").child("speed").setValue(targetInfo.speed);
+                            myRef.child(RoomNumber).child("Target").child("latitude").setValue(targetInfo.location.latitude);
+                            myRef.child(RoomNumber).child("Target").child("longitude").setValue(targetInfo.location.longitude);
                         }
                         Intent intent = new Intent(TargetLocationActivity.this, MapViewActivity.class);
                         intent.putExtra("uid", getIntent().getStringExtra("uid"));
+                        intent.putExtra("room",RoomNumber);
                         startActivity(intent);
                         finish();
                 }
