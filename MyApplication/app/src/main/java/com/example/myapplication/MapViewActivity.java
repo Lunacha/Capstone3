@@ -154,11 +154,7 @@ public class MapViewActivity extends AppCompatActivity implements
                         new LatLng(lat_lost, lon_lost),
                         0.001);
 
-                ArrayList<Coordinate> coords = new ArrayList<>();
-
-                for (LatLng latLng : list) {
-                    coords.add(coordinateLatLng2metric(latLng));
-                }
+                List<Coordinate> coords = convertLatLngList2CoordinateList(list);
 
                 searchingArea = fact.createPolygon(coords.toArray(new Coordinate[0]));
 
@@ -627,14 +623,16 @@ public class MapViewActivity extends AppCompatActivity implements
                         {
                             return;
                         }
+
                         prevSearchAreaVertices
                                 = convertLatLngList2CoordinateList(
                                 createCircleLatLngList(entry.getValue(), radius));
-                        searchedArea = geometryFactory.createPolygon(prevSearchAreaVertices.toArray(new Coordinate[0]));
+
+                        searchedArea = geometryFactory.createPolygon(prevSearchAreaVertices.toArray(new Coordinate[0])).convexHull();
                     }
                     else
                     {
-                        List<Coordinate> currentSearchAreaVertices
+                        final List<Coordinate> currentSearchAreaVertices
                                 = convertLatLngList2CoordinateList(
                                 createCircleLatLngList(entry.getValue(), radius));
 
@@ -669,7 +667,6 @@ public class MapViewActivity extends AppCompatActivity implements
 
             if (null == searchArea)
             {
-                Log.w(LOG_TAG, "searchArea null");
                 return;
             }
             synchronized (searchArea)
@@ -695,41 +692,6 @@ public class MapViewActivity extends AppCompatActivity implements
                         //.strokeColor(Color.TRANSPARENT)
                         .fillColor(Color.argb(80, Color.red(lineColor), Color.green(lineColor), Color.blue(lineColor)));
 
-//                int numPolygons = searchArea.getNumGeometries();
-//                for(int x = 0; x < numPolygons; x++)
-//                {
-//                    org.locationtech.jts.geom.Geometry value = ((org.locationtech.jts.geom.Polygon)(searchArea.getGeometryN(x)));
-//                    ArrayList<Coordinate> arr;
-//                    try {
-//                        org.locationtech.jts.geom.Polygon ppp = (org.locationtech.jts.geom.Polygon)value;
-//
-//                        arr = new ArrayList<>(
-//                                Arrays.asList(ppp.getExteriorRing().getCoordinates()));
-//                        for (Coordinate coordinate : arr) {
-//                            options.add(new LatLng(coordinate.getX(), coordinate.getY()));
-//                        }
-//
-//                        int numHoles = ppp.getNumInteriorRing();
-//                        for (int h = 0; h < numHoles; h++)
-//                        {
-//                            arr = new ArrayList<>(
-//                                    Arrays.asList(ppp.getInteriorRingN(h).getCoordinates()));
-//                            ArrayList<LatLng> latLngs = new ArrayList<>();
-//                            for (Coordinate coordinate : arr) {
-//                                latLngs.add(coordinatemetric2LatLng(coordinate));
-//                            }
-//                            options.addHole(latLngs);
-//                        }
-//                    }
-//                    catch (NullPointerException e) {
-//                        Log.w(LOG_TAG, "null");
-//                        continue;
-//                    }
-//                    polygons.add(map.addPolygon(options));
-//                    Log.w(LOG_TAG, "draw a polygon");
-//                }
-
-
                 ArrayList<Coordinate> arr;
                 try {
                     org.locationtech.jts.geom.Polygon ppp = (org.locationtech.jts.geom.Polygon)searchArea;
@@ -747,12 +709,9 @@ public class MapViewActivity extends AppCompatActivity implements
                                 Arrays.asList(ppp.getInteriorRingN(h).getCoordinates()));
                         ArrayList<LatLng> latLngs = new ArrayList<>();
                         for (Coordinate coordinate : arr) {
-                            latLngs.add(coordinatemetric2LatLng(coordinate));
-                            Log.w(LOG_TAG, String.format("hole vertex %f %f", coordinatemetric2LatLng(coordinate).latitude, coordinatemetric2LatLng(coordinate).longitude));
-                            options.addHole(latLngs);
-                            map.addMarker(new MarkerOptions()
-                                    .position(coordinatemetric2LatLng(coordinate)));
+                            latLngs.add(new LatLng(coordinate.getX(), coordinate.getY()));
                         }
+                        options.addHole(latLngs);
                         Log.w(LOG_TAG, "draw a hole");
                     }
                 }
@@ -785,7 +744,7 @@ public class MapViewActivity extends AppCompatActivity implements
             c.setTime(new Date(now));
             //return (height * 0.22d + 11.0d) * (((c.get(Calendar.HOUR_OF_DAY) + 5) % 24 < 12 ) ? (3d / 2d) : 1);
 
-            return 2;
+            return 18;
         }
 
         public final double time_lost() {
