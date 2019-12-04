@@ -1,0 +1,12 @@
+{"node": [
+{"id": 0, "latitude": 37.29631, "longitude": 126.970631, "link": [{"id": 1, "distance": 175.4728603170997}, {"id": 2, "distance": 97.76603860489747}, {"id": 3, "distance": 19.815449671100154}]}, 
+{"id": 1, "latitude": 37.296029, "longitude": 126.972583, "link": [{"id": 0, "distance": 175.4728603170997}, {"id": 3, "distance": 131.37965313211}, {"id": 4, "distance": 116.44700242570087}]}, 
+{"id": 2, "latitude": 37.295467, "longitude": 126.970317, "link": [{"id": 0, "distance": 97.76603860489747}, {"id": 5, "distance": 291.34351835266}]}, 
+{"id": 3, "latitude": 37.296487, "longitude": 126.970605, "link": [{"id": 0, "distance": 19.815449671100154}, {"id": 4, "distance": 16.22088991315432}, {"id": 6, "distance": 34.57014902166119}]}, 
+{"id": 4, "latitude": 37.296629, "longitude": 126.970647, "link": [{"id": 3, "distance": 16.22088991315432}, {"id": 5, "distance": 7.401230214889188}, {"id": 6, "distance": 43.67163291332034}]}, 
+{"id": 5, "latitude": 37.296692, "longitude": 126.970674, "link": [{"id": 4, "distance": 7.401230214889188}, {"id": 7, "distance": 168.96758769934488}, {"id": 8, "distance": 33.91408968620657}]}, 
+{"id": 6, "latitude": 37.296608, "longitude": 126.97114, "link": [{"id": 4, "distance": 43.67163291332034}, {"id": 7, "distance": 37.53552378731473}]}, 
+{"id": 7, "latitude": 37.296919, "longitude": 126.971305, "link": [{"id": 6, "distance": 37.53552378731473}, {"id": 8, "distance": 26.09263559347099}, {"id": 9, "distance": 21.1649614258953}]}, 
+{"id": 8, "latitude": 37.296872, "longitude": 126.971594, "link": [{"id": 7, "distance": 26.09263559347099}]}, 
+{"id": 9, "latitude": 37.297096, "longitude": 126.971393, "link": [{"id": 7, "distance": 21.1649614258953}, {"id": 10, "distance": 26.210712967407787}, {"id": 11, "distance": 23.2822687595376}]}, 
+{"id": 10, "latitude": 37.296972, "longitude": 126.971645, "link": [{"id": 9, "distance": 26.210712967407787}]}]}
