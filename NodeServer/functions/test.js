@@ -1,8 +1,8 @@
 var fs = require('fs');
 
 //var parsedJSON = fs.readFileSync('./graph_new.json');
+var passedtime = 300; // input
 var parsedJSON = fs.readFileSync('./graph_new_ex.json');//노드 리스트로 잘 되어있는 샘플파일로
-
 const graph = JSON.parse(parsedJSON);
 const firstval = Number.MAX_SAFE_INTEGER;
 var rate_list = [];
@@ -10,8 +10,9 @@ var next_nodes = []; //[next_node, curr_node]의 list
 var node_len = graph.node.length;
 var next_node_len;
 
+
 function comparelists(a, b) {
-    return a[0] - b[0];
+    return b[0] - a[0];
 }
 
 var vector = (posX, posY) => {
@@ -34,11 +35,11 @@ var sum = (array) => {
     return total;
 }
 
-var calculate_rate = (angle_list, index_list) => {
+var calculate_rate = (angle_list, index_list, curr_val) => {
     var rate_list_temp = [];
     total = sum(angle_list) + angle_list.length;
     for (i in angle_list) {
-        rate_list_temp.push([(angle_list[i] + 1) / total, index_list[i]]);
+        rate_list_temp.push([(angle_list[i] + 1) / total * curr_val, index_list[i]]);
     }
     rate_list_temp.sort(comparelists)
 
@@ -61,11 +62,16 @@ var calculate_angle = (vec1, vec2) => {
 //경로 확률 계산
 //var choose_next_node = (graph, center_index, before_index) => {
 var choose_next_node = (center_index, before_index) => {
-    var val = rate_list[center_index];
+    //확률 더하기만 있고 빼는거 아직 미구현
+    var curr_val = rate_list[center_index];
     var angle_list = [];
     var index_list = [];
     var stn_vec = new vector(graph.node[before_index].latitude - graph.node[center_index].latitude, graph.node[before_index].longitude - graph.node[center_index].longitude);
-    for (i in graph.node[center_index].link) {
+
+    if (graph.node[center_index].link.length == 1) // 막다른 길
+        rate_list[before_index] += rate_list[center_index]; // 뒤돌아가기
+
+    else for (i in graph.node[center_index].link) {
         //var adjacent_index = search_index(graph, graph.node[center_index].link[i].id);
         var adjacent_index = graph.node[center_index].link[i].id;
         if (adjacent_index == before_index) {
@@ -78,11 +84,11 @@ var choose_next_node = (center_index, before_index) => {
             index_list.push(adjacent_index);
         }
     }
-    var smooth_rate_list = calculate_rate(angle_list, index_list);
+    var smooth_rate_list = calculate_rate(angle_list, index_list, curr_val);
 
-    for (var i = 0; i < smooth_rate_list.length; i++) 
+    for (var i = 0; i < smooth_rate_list.length; i++)
         rate_list[smooth_rate_list[i][1]] += smooth_rate_list[i][0];
-    
+
 }
 
 //경로 확률 계산(최초)
@@ -125,7 +131,7 @@ while (next_node_len) {
     next_node_len = next_nodes.length;
 }
 
-
+/// 시간 고려
 /// 복사한 곳에 붙여놓은 후 한번에 더해주는 식으로 해야
 /// 막다른 길의 경우
-/// 각도 같은 길들의 경우
+/// 경로 저장해서 반환해 보여주는거까지.
