@@ -14,7 +14,16 @@
         android:id="@+id/roomkey"
         android:layout_width="match_parent"
         android:layout_height="43dp"
-        android:background="@color/colorBackGround"
-        android:textColor="#00FFFFFF" />
+        android:background="#1A1A1A"
+        android:textColor="#FFFFFF"
+         />
+
+    <Button
+        android:id="@+id/btn_keycopy"
+        android:layout_width="wrap_content"
+        android:layout_height="42sp"
+        android:layout_gravity="right"
+        android:text="Room Code 복사" />
+
 
 </FrameLayout>

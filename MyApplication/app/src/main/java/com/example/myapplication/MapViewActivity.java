@@ -1,6 +1,8 @@
 package com.example.myapplication;
 
 import android.Manifest;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
@@ -9,7 +11,10 @@ import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.Log;
 import android.util.Pair;
+import android.view.View;
 import android.view.WindowManager;
+import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -70,6 +75,7 @@ public class MapViewActivity extends AppCompatActivity implements
 
     private static final String LOG_TAG = "MapViewActivity";
 
+    private Button btn_keycopy;
     static final long millis = 1;
     static final long second = 1000 * millis;
     static final long minute = 60 * second;
@@ -574,6 +580,7 @@ public class MapViewActivity extends AppCompatActivity implements
 
 
     private String myUID = null;
+    private String myRoomNum = null;
 
     private GoogleMap map;
 
@@ -594,6 +601,18 @@ public class MapViewActivity extends AppCompatActivity implements
         setContentView(R.layout.map_view);
 
         myUID = getIntent().getStringExtra("uid");
+        myRoomNum = getIntent().getStringExtra("room");
+
+        btn_keycopy = findViewById(R.id.btn_keycopy);
+        btn_keycopy.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ClipboardManager clipboardManager = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+                ClipData clipData = ClipData.newPlainText("RoomNumber",myRoomNum);
+                clipboardManager.setPrimaryClip(clipData);
+                Toast.makeText(getApplicationContext(),"Room Code가 복사되었습니다.",Toast.LENGTH_SHORT).show();
+            }
+        });
 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
@@ -606,7 +625,7 @@ public class MapViewActivity extends AppCompatActivity implements
         map.getUiSettings().setMyLocationButtonEnabled(false);
         checkRunTimePermission();
 
-        myRoom = new Room(getIntent().getStringExtra("room"));
+        myRoom = new Room(myRoomNum);
 
         t1 = new Timer();
         t2 = new Timer();

@@ -83,7 +83,7 @@ public class TargetLocationActivity extends AppCompatActivity implements
                         {
                             return;
                         }
-                        String RoomNumber = UUID.randomUUID().toString();
+                        String RoomNumber = UUID.randomUUID().toString().replaceAll("-","");
                         ClipboardManager clipboardManager = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
                         ClipData clipData = ClipData.newPlainText("RoomNumber",RoomNumber);
                         clipboardManager.setPrimaryClip(clipData);
