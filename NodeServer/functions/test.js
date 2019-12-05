@@ -10,7 +10,7 @@ var lostposition = { "latitude": 37.28555, "longitude": 126.971666 }; // 실종 
 //var lostposition = { "latitude": 37.296972, "longitude": 126.971645 }
 //var lostposition = { "latitude": 37.295722, "longitude": 126.967981 };
 
-var parsedJSON = fs.readFileSync('./graph_new_sample.json');
+var parsedJSON = fs.readFileSync('./graph_extended_new.json');
 //var parsedJSON = fs.readFileSync('./graph_new.json');
 const graph = JSON.parse(parsedJSON);
 var rate_list = []; // vector<pair<rate, currenttime>> array
@@ -51,7 +51,7 @@ function comparelists(a, b) {
 
 function search_index(graph, id) {
     for (i in graph.node) {
-        if (graph.node[i].id == id)
+        if (graph.node[i].id === id)
             return i;
     }
 }
@@ -110,7 +110,7 @@ function choose_next_node(center_index, before_index) {
     var stn_vec = new vector(graph.node[before_index].latitude - graph.node[center_index].latitude, graph.node[before_index].longitude - graph.node[center_index].longitude);
 
     var shifted = rate_list[center_index].shift();//dequeue
-    if (links.length == 1) {// 막다른 길 -> 뒤돌아가기
+    if (links.length === 1) {// 막다른 길 -> 뒤돌아가기
         if (passedtime + links[0].distance / speed > losttime) {
             rate_list[center_index].unshift(shifted);
             return;
@@ -130,7 +130,7 @@ function choose_next_node(center_index, before_index) {
             var adjacent_index = links[i].id;
 
             //직전에 지나온(탐색해온) 길
-            if (adjacent_index == before_index) {
+            if (adjacent_index === before_index) {
                 angle_list.push(0);
                 index_list.push(before_index);
             }
@@ -146,7 +146,7 @@ function choose_next_node(center_index, before_index) {
     for (var j = 0; j < smooth_rate_list.length; j++) {
         var dist;
         for (i in links) {
-            if (links[i].id == smooth_rate_list[j][1])
+            if (links[i].id === smooth_rate_list[j][1])
                 dist = links[i].distance;
         }
         next_nodes.push([smooth_rate_list[j][1], center_index]);
@@ -206,26 +206,32 @@ function get_result() {
     result_rate_list.sort(comparelists);
 }
 
-for (var i = 0; i < node_len; i++) {
-    rate_list.push([]);
+function mainfucntions() {
+    for (var i = 0; i < node_len; i++) {
+        rate_list.push([]);
+    }
+
+    var nearest = find_nearest_node();
+    next_nodes.push([nearest, nearest]); // 최초 노드(center index == before index)
+    initial_search();
+
+    general_search();
+
+    get_result();
+
+    //console.log(result_rate_list);
+
+    for (i = 0; i < MARK; i++) {
+        returnval.node[i].id = result_rate_list[i][1];
+        returnval.node[i].latitude = graph.node[result_rate_list[i][1]].latitude;
+        returnval.node[i].longitude = graph.node[result_rate_list[i][1]].longitude;
+    }
+
+    console.log(returnval);
+
+    return returnval;
 }
 
-var nearest = find_nearest_node();
-next_nodes.push([nearest, nearest]); // 최초 노드(center index == before index)
-initial_search();
+module.exports.mainfucntions = mainfucntions;
 
-general_search();
-
-get_result();
-
-//console.log(result_rate_list);
-
-for (var i = 0; i < MARK; i++) {
-    returnval.node[i].id = result_rate_list[i][1];
-    returnval.node[i].latitude = graph.node[result_rate_list[i][1]].latitude;
-    returnval.node[i].longitude = graph.node[result_rate_list[i][1]].longitude;
-}
-
-console.log(returnval);
-//return returnval;
 /// 경로 저장해서 반환 추가 예정
