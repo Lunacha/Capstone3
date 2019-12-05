@@ -1,18 +1,19 @@
 var fs = require('fs');
 
-const FIRSTVAL = Number.MAX_SAFE_INTEGER
+const FIRSTVAL = Number.MAX_SAFE_INTEGER / 1024 / 1024 / 1024;
 const MARK = 3; //화면에 표시할 갯수
 
 // client input
 var losttime = 300; // 실종 경과 시간
 var speed = 1.1; //아이의 평균 보행속도(m/s)
-var lostposition = { "latitude": 37.29555, "longitude": 126.970666 } // 실종 위치
+var lostposition = { "latitude": 37.29555, "longitude": 126.970666 } // 실종 위치(예시)
 
 
-var parsedJSON = fs.readFileSync('./graph_new_ex.json');
+var parsedJSON = fs.readFileSync('./graph_new_sample.json');
 //var parsedJSON = fs.readFileSync('./graph_new.json');
 const graph = JSON.parse(parsedJSON);
-var rate_list = [], result_rate_list = [];
+var rate_list = []; // vector<pair<rate, currenttime>> array
+var result_rate_list = [];
 var next_nodes = []; //[next_node, curr_node]의 list
 var node_len = graph.node.length;
 var next_node_len;
@@ -59,7 +60,7 @@ function find_nearest_node() {
     var dist = 0, minindex;
     for (var i = 0; i < node_len; i++) {
         dist = Math.abs(lostposition.latitude - graph.node[i].latitude) + Math.abs(lostposition.longitude - graph.node[i].longitude);
-        if(min > dist){
+        if (min > dist) {
             min = dist;
             minindex = i;
         }
@@ -79,6 +80,7 @@ function calculate_rate(angle_list, index_list, curr_val) {
     var rate_list_temp = [];
     total = sums(angle_list) + angle_list.length;
     for (i in angle_list) {
+        //console.log((angle_list[i] + 1) / total * curr_val);
         rate_list_temp.push([(angle_list[i] + 1) / total * curr_val, index_list[i]]);
     }
     rate_list_temp.sort(comparelists)
@@ -102,21 +104,25 @@ function calculate_angle(vec1, vec2) {
 //var choose_next_node = (graph, center_index, before_index) => {
 function choose_next_node(center_index, before_index) {
     //console.log(rate_list[center_index],"\n");
-    var curr_val = rate_list[center_index][0];
-    var passedtime = rate_list[center_index][1];
+    var curr_val = rate_list[center_index][0][0];
+    var passedtime = rate_list[center_index][0][1];
+    //console.log(passedtime);
     var angle_list = [], index_list = [];
     var links = graph.node[center_index].link;
     var stn_vec = new vector(graph.node[before_index].latitude - graph.node[center_index].latitude, graph.node[before_index].longitude - graph.node[center_index].longitude);
 
     rate_list[center_index].shift();//dequeue
 
-    if (links.length == 1) // 막다른 길
-        rate_list[before_index].push([curr_val, passedtime + links[0].distance / speed]); // 뒤돌아가기
+    
+    if (links.length == 1) {// 막다른 길 -> 뒤돌아가기
+        next_nodes.push([before_index, center_index]);
+        rate_list[before_index].push([curr_val, passedtime + links[0].distance / speed]);
+        return;
+    }
     else
         for (i in links) {
-            if (passedtime + links.distance / speed > losttime)
-                break;
-
+            if (passedtime + links[i].distance / speed > losttime)
+                return;
             //var adjacent_index = search_index(graph, graph.node[center_index].link[i].id);
             var adjacent_index = links[i].id;
             if (adjacent_index == before_index) {
@@ -124,26 +130,30 @@ function choose_next_node(center_index, before_index) {
                 index_list.push(before_index);
             }
             else {
-                //console.log(adjacent_index);
-                //console.log(graph.node[adjacent_index]);
                 var ind_vec = new vector(graph.node[adjacent_index].latitude - graph.node[center_index].latitude, graph.node[adjacent_index].longitude - graph.node[center_index].longitude);
                 angle_list.push(calculate_angle(stn_vec, ind_vec));
                 index_list.push(adjacent_index);
             }
-
-            var smooth_rate_list = calculate_rate(angle_list, index_list, curr_val);
-
-            for (var j = 0; j < smooth_rate_list.length; j++) {
-                next_nodes.push([smooth_rate_list[j][1], center_index]);
-                rate_list[smooth_rate_list[j][1]].push([smooth_rate_list[j][0], passedtime + links.distance / speed]);
-            }
         }
+    var smooth_rate_list = calculate_rate(angle_list, index_list, curr_val);
+    for (var j = 0; j < smooth_rate_list.length; j++) {
+        var dist;
+        for (i in links) {
+            if(links[i].id == smooth_rate_list[j][1])
+                dist = links[i].distance;
+        }
+        next_nodes.push([smooth_rate_list[j][1], center_index]);
+        rate_list[smooth_rate_list[j][1]].push([smooth_rate_list[j][0], passedtime + dist / speed]);
+    }
+
 }
 
 function general_search() {
     next_node_len = next_nodes.length;
+    var temp = 0;
     while (next_node_len) {
-
+        console.log(next_node_len);
+        //if (temp > 1) break;
         for (var i = 0; i < next_node_len; i++) {
             var center_index = next_nodes[0][0];
             var before_index = next_nodes[0][1];
@@ -151,8 +161,9 @@ function general_search() {
             next_nodes.shift();//dequeue
         }
         next_node_len = next_nodes.length;
-        console.log(next_node_len);
+
         //console.log(rate_list[0]);
+        //temp++;
     }
 }
 
@@ -178,7 +189,6 @@ function initial_search() {
         choose_next_node_first(center_index);
         next_nodes.shift();//dequeue
     }
-    //console.log(next_nodes);
 }
 
 function get_result() {
@@ -208,13 +218,11 @@ general_search();
 get_result();
 
 for (var i = 0; i < MARK; i++) {
-    returnval.node[i].id = comparelists[i][1];
-    returnval.node[i].latitude = graph.node[comparelists[i][1]].latitude;
-    returnval.node[i].longitude = graph.node[comparelists[i][1]].longitude;
+    returnval.node[i].id = result_rate_list[i][1];
+    returnval.node[i].latitude = graph.node[result_rate_list[i][1]].latitude;
+    returnval.node[i].longitude = graph.node[result_rate_list[i][1]].longitude;
 }
 
 console.log(returnval);
 //return returnval;
-
-
 /// 경로 저장해서 반환 추가 예정
