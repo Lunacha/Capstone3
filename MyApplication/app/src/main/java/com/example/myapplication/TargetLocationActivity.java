@@ -57,7 +57,7 @@ public class TargetLocationActivity extends AppCompatActivity implements
         long time_lost_LONG = getIntent().getLongExtra("time_lost", -1);
         long epoch_Today
                 = c.getTimeInMillis()
-                - (c.get(Calendar.HOUR_OF_DAY) * 3600)
+                - (c.get(Calendar.HOUR_OF_DAY) * 3600000)
                 - (c.get(Calendar.MINUTE) * 60000)
                 - (c.get(Calendar.SECOND) * 1000)
                 - c.get(Calendar.MILLISECOND);
@@ -66,7 +66,7 @@ public class TargetLocationActivity extends AppCompatActivity implements
         if (targetTime >= c.getTimeInMillis())
         {
             targetTime -= 24 * 3600 * 1000;
-            Log.w(LOG_TAG, "Your choice means yesterday, doesn't it?");
+            Log.w(LOG_TAG, String.format("Your choice means yesterday, doesn't it? %d %d %d %d, %d:%d:%d.%4d", targetTime, time_lost_LONG, epoch_Today, c.getTimeInMillis(), c.get(Calendar.HOUR_OF_DAY), c.get(Calendar.MINUTE), c.get(Calendar.SECOND), c.get(Calendar.MILLISECOND)));
         }
 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
@@ -109,7 +109,7 @@ public class TargetLocationActivity extends AppCompatActivity implements
     public void onMapReady(
             final GoogleMap googleMap) {
         map = googleMap;
-        map.animateCamera(CameraUpdateFactory.newLatLng(new LatLng(37.3d, 127d)));
+        map.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(37.2934204446d, 126.97467286d), 14));
 
         map.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
             @Override

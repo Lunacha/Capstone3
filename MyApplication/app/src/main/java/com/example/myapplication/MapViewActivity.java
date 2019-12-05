@@ -23,6 +23,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.Circle;
 import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.JointType;
@@ -159,6 +160,9 @@ public class MapViewActivity extends AppCompatActivity implements
                 map.setOnMyLocationChangeListener(MapViewActivity.this::onLocationChanged); // WARNING: DEPRECATED
 
                 myRef.child(rID).child("MyLocation").addChildEventListener(roomListener);
+
+                t1.schedule(task_drawingPaths, 500, pathRenewingPeriod);
+                t2.schedule(task_drawingArea, 1500, AreaRenewingPeriod);
                 Log.i(LOG_TAG, "Target confirmed.");
             }
 
@@ -185,12 +189,7 @@ public class MapViewActivity extends AppCompatActivity implements
         }
 
         void addMember(String uID) {
-            if(0 == uID.compareTo(myUID)) {
-                members.add(new Member(rID, uID, -1));
-            }
-            else {
-                members.add(new Member(rID, uID, ++counterForLineTag));
-            }
+            members.add(new Member(rID, uID, ++counterForLineTag));
         }
 
         @UiThread
@@ -199,7 +198,7 @@ public class MapViewActivity extends AppCompatActivity implements
             {
                 searchingArea = map.addCircle(new CircleOptions()
                         .zIndex(-100000000000000000000000000000f)
-                        .fillColor(Color.argb(50, 50, 50, 50))
+                        .fillColor(Color.argb(120, 50, 50, 50))
                         .center(target.location_lost)
                         .radius(target.getSpeed() * (now - target.getLostTime()) / 1000d));
             }
@@ -313,7 +312,7 @@ public class MapViewActivity extends AppCompatActivity implements
                     (-1 == Tag)
                             ? Color.rgb(0x00, 0xFF, 0x00)
                             : lineColors[Tag % lineColors.length];
-            int lineAlpha = 0x20;
+            int lineAlpha = 0x30;
             zIndex = (0 == myUID.compareTo(uID)) ?(1f) :(-Float.valueOf(uID));
 
             myRef.child(rID).child("MyLocation").child(uID).addChildEventListener(userListener);
@@ -328,10 +327,11 @@ public class MapViewActivity extends AppCompatActivity implements
                                 Color.green(lineColor),
                                 Color.blue(lineColor)))
                         .zIndex(zIndex)
+                        .width(30)
                         .startCap(new RoundCap())
                         .endCap(new RoundCap())
                         .jointType(JointType.ROUND)));
-                lineAlpha += 0x30;
+                lineAlpha += 0x15;
             }
         }
 
@@ -518,6 +518,9 @@ public class MapViewActivity extends AppCompatActivity implements
             height = height_in;
             speed = speed_in;
             location_lost = location_lost_in;
+
+
+            map.moveCamera(CameraUpdateFactory.newLatLngZoom(location_lost, 15));
         }
 
         private double getSearchRadius(long now) {
@@ -594,8 +597,6 @@ public class MapViewActivity extends AppCompatActivity implements
 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-
-        myRoom = new Room(getIntent().getStringExtra("room"));
     }
 
     @Override
@@ -604,12 +605,11 @@ public class MapViewActivity extends AppCompatActivity implements
         map = googleMap;
         map.getUiSettings().setMyLocationButtonEnabled(false);
         checkRunTimePermission();
-        map.animateCamera(CameraUpdateFactory.newLatLng(new LatLng(37.3d, 127d)));
+
+        myRoom = new Room(getIntent().getStringExtra("room"));
 
         t1 = new Timer();
         t2 = new Timer();
-        t1.schedule(task_drawingPaths, 500, pathRenewingPeriod);
-        t2.schedule(task_drawingArea, 1500, AreaRenewingPeriod);
     }
 
     @Override
@@ -621,11 +621,9 @@ public class MapViewActivity extends AppCompatActivity implements
         t2.cancel();
 
         myRoom.fin();
-        myRoom = null;
 
 
         getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        map = null;
     }
 
     @Override
