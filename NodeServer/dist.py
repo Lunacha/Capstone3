@@ -1,7 +1,8 @@
 import json
 from haversine import haversine
 
-with open('graph_dist.json') as json_file:
+#with open('graph_dist.json') as json_file:
+with open('graph_extended.json') as json_file:
     json_data = json.load(json_file)
 
 for i in json_data['node']:
@@ -15,6 +16,7 @@ for i in json_data['node']:
         b = (b1, b2)
         j['distance'] = haversine(a, b) * 1000
 
-with open('graph_new.json','w') as j_file:
+#with open('graph_new.json','w') as j_file:
+with open('graph_extended_new.json','w') as j_file:
     json.dump(json_data,j_file)
 
