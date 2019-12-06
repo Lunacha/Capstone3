@@ -3,16 +3,14 @@ var fs = require('fs');
 const FIRSTVAL = Number.MAX_SAFE_INTEGER / 1024 / 1024 / 1024;
 const MARK = 3; //화면에 표시할 갯수
 
-// client input
-var losttime = 300; // 실종 경과 시간
-var speed = 1.1; //아이의 평균 보행속도(m/s)
-var lostposition = { "latitude": 37.28555, "longitude": 126.971666 }; // 실종 위치(예시)
-//var lostposition = { "latitude": 37.296972, "longitude": 126.971645 }
-//var lostposition = { "latitude": 37.295722, "longitude": 126.967981 };
+//디버깅용
+// var losttime = 337.8; // 실종 경과 시간
+// var targetspeed = 1.04; //아이의 평균 보행속도(m/s)
+// var lostposition = { "latitude": 37.295975917528786, "longitude": 126.9726127758622 };
 
 var parsedJSON = fs.readFileSync('./graph_extended_new.json');
-//var parsedJSON = fs.readFileSync('./graph_new.json');
 const graph = JSON.parse(parsedJSON);
+
 var rate_list = []; // vector<pair<rate, currenttime>> array
 var result_rate_list = [];
 var next_nodes = []; //[next_node, curr_node]의 list
@@ -56,8 +54,8 @@ function search_index(graph, id) {
     }
 }
 
-function find_nearest_node() {
-    var min = 100000;
+function find_nearest_node(lostposition) {
+    var min = 10000000;
     var dist = 0, minindex;
     for (var i = 0; i < node_len; i++) {
         dist = Math.abs(lostposition.latitude - graph.node[i].latitude) + Math.abs(lostposition.longitude - graph.node[i].longitude);
@@ -101,8 +99,7 @@ function calculate_angle(vec1, vec2) {
 }
 
 //경로 확률 계산
-//var choose_next_node = (graph, center_index, before_index) => {
-function choose_next_node(center_index, before_index) {
+function choose_next_node(center_index, before_index, losttime, targetspeed) {
     var curr_val = rate_list[center_index][0][0];
     var passedtime = rate_list[center_index][0][1];
     var angle_list = [], index_list = [];
@@ -111,22 +108,21 @@ function choose_next_node(center_index, before_index) {
 
     var shifted = rate_list[center_index].shift();//dequeue
     if (links.length === 1) {// 막다른 길 -> 뒤돌아가기
-        if (passedtime + links[0].distance / speed > losttime) {
+        if (passedtime + links[0].distance / targetspeed > losttime) {
             rate_list[center_index].unshift(shifted);
             return;
         }
 
         next_nodes.push([before_index, center_index]);
-        rate_list[before_index].push([curr_val, passedtime + links[0].distance / speed]);
+        rate_list[before_index].push([curr_val, passedtime + links[0].distance / targetspeed]);
         return;
     }
     else
         for (i in links) {
-            if (passedtime + links[i].distance / speed > losttime) {
+            if (passedtime + links[i].distance / targetspeed > losttime) {
                 rate_list[center_index].unshift(shifted);
                 return;
             }
-            //var adjacent_index = search_index(graph, graph.node[center_index].link[i].id);
             var adjacent_index = links[i].id;
 
             //직전에 지나온(탐색해온) 길
@@ -150,11 +146,11 @@ function choose_next_node(center_index, before_index) {
                 dist = links[i].distance;
         }
         next_nodes.push([smooth_rate_list[j][1], center_index]);
-        rate_list[smooth_rate_list[j][1]].push([smooth_rate_list[j][0], passedtime + dist / speed]);
+        rate_list[smooth_rate_list[j][1]].push([smooth_rate_list[j][0], passedtime + dist / targetspeed]);
     }
 }
 
-function general_search() {
+function general_search(losttime, targetspeed) {
     next_node_len = next_nodes.length;
     var temp = 0;
     while (next_node_len) {
@@ -162,7 +158,7 @@ function general_search() {
         for (var i = 0; i < next_node_len; i++) {
             var center_index = next_nodes[0][0];
             var before_index = next_nodes[0][1];
-            choose_next_node(center_index, before_index);
+            choose_next_node(center_index, before_index, losttime, targetspeed);
             next_nodes.shift();//dequeue
         }
         next_node_len = next_nodes.length;
@@ -170,25 +166,27 @@ function general_search() {
 }
 
 //경로 확률 계산(최초)
-function choose_next_node_first(center_index) {
+function choose_next_node_first(center_index, losttime, targetspeed) {
     var links = graph.node[center_index].link;
+    
     for (i in links) {
-        if (links[i].distance / speed > losttime)
+        if (links[i].distance / targetspeed > losttime)
             break;
-
-        //var adjacent_index = search_index(graph, graph.node[center_index].link[i].id);
+        
         var adjacent_index = links[i].id;
-        rate_list[adjacent_index].push([FIRSTVAL, links[i].distance / speed]);
+        rate_list[adjacent_index].push([FIRSTVAL, links[i].distance / targetspeed]);
         next_nodes.push([adjacent_index, center_index]);
     }
 }
 
 //최초 경로 탐색
-function initial_search() {
+function initial_search(losttime, targetspeed) {
+
     next_node_len = next_nodes.length;
     for (var i = 0; i < next_node_len; i++) {
         var center_index = next_nodes[0][0];
-        choose_next_node_first(center_index);
+        console.log(targetspeed);
+        choose_next_node_first(center_index, losttime, targetspeed);
         next_nodes.shift();//dequeue
     }
 }
@@ -206,20 +204,19 @@ function get_result() {
     result_rate_list.sort(comparelists);
 }
 
-function mainfucntions() {
+function mainfucntions(losttime, targetspeed, lostposition) {
     for (var i = 0; i < node_len; i++) {
         rate_list.push([]);
     }
 
-    var nearest = find_nearest_node();
+    var nearest = find_nearest_node(lostposition);
     next_nodes.push([nearest, nearest]); // 최초 노드(center index == before index)
-    initial_search();
 
-    general_search();
+    initial_search(losttime, targetspeed);
+
+    general_search(losttime, targetspeed);
 
     get_result();
-
-    //console.log(result_rate_list);
 
     for (i = 0; i < MARK; i++) {
         returnval.node[i].id = result_rate_list[i][1];
@@ -233,5 +230,4 @@ function mainfucntions() {
 }
 
 module.exports.mainfucntions = mainfucntions;
-
 /// 경로 저장해서 반환 추가 예정
