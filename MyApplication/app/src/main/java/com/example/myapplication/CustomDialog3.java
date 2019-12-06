@@ -27,7 +27,7 @@ public class CustomDialog3{
 
     SeekBar seekbar;
     TextView outcome;
-    public double number = 0;
+    public double number = 0.8;
 
     public void callFunction(String userID) {
 
