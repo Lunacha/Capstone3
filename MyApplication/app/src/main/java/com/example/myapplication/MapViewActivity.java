@@ -290,7 +290,7 @@ public class MapViewActivity extends AppCompatActivity implements
                                         Double.parseDouble(jObject.optString("longitude")));
 
                                 expectedArea = map.addCircle(new CircleOptions()
-                                        .zIndex(-100000000000000000000000000000f)
+                                        .zIndex(-99999999999999999999999999990f)
                                         .fillColor(Color.argb(60, 20, 100, 20))
                                         .center(expectedPosition)
                                         .radius(50));
