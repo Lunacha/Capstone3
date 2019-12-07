@@ -180,7 +180,7 @@ public class MapViewActivity extends AppCompatActivity implements
 
                 t1.schedule(task_drawingPaths, 500, pathRenewingPeriod);
                 t2.schedule(task_drawingArea, 1500, AreaRenewingPeriod);
-                t3.schedule(task_drawingExpectedArea, 5000, expectedAreaRenewingPeriod);
+                t3.schedule(task_drawingExpectedArea, 10000, expectedAreaRenewingPeriod);
                 Log.i(LOG_TAG, "Target confirmed.");
             }
 
@@ -260,6 +260,7 @@ public class MapViewActivity extends AppCompatActivity implements
         @UiThread
         void drawExpectedposition(long now){
             Log.i(LOG_TAG, "Drawing Expected positions.");
+            double initialtime = (now - target.getLostTime()) / 1000d;
 
             String url = "https://golden-finder.firebaseapp.com/api";
             //String url = "http://172.30.1.44:5000";
@@ -267,7 +268,7 @@ public class MapViewActivity extends AppCompatActivity implements
             //JSON형식으로 데이터 통신을 진행
             JSONObject position = new JSONObject();
             try {
-                position.put("losttime", Double.toString((now - target.getLostTime()) / 1000d));
+                position.put("losttime", Double.toString(initialtime));
                 position.put("targetspeed", Double.toString(target.getSpeed()));
                 position.put("latitude", Double.toString(target.location_lost.latitude));
                 position.put("longitude", Double.toString(target.location_lost.longitude));
@@ -619,7 +620,7 @@ public class MapViewActivity extends AppCompatActivity implements
 
     final long pathRenewingPeriod = 500;
     final long AreaRenewingPeriod = 1000;
-    final long expectedAreaRenewingPeriod = 5000;
+    final long expectedAreaRenewingPeriod = 10000;
 
     private Timer t1;
     private Timer t2;
