@@ -18,15 +18,15 @@ app.use('/', (req, res) => {
     var lostlongitude = req.body.longitude;
     lostposition.latitude = lostlatitude;
     lostposition.longitude = lostlongitude;
-    console.log(lostposition);
+    //console.log(lostposition);
 
     //디버깅용
-    // var losttime = 750.0; // 실종 경과 시간
-    // var targetspeed = 1.04; //아이의 평균 보행속도(m/s)
-    // var lostposition = { "latitude": 37.295975917528786, "longitude": 126.9726127758622 };
+    // var losttime = 60.0; // 실종 경과 시간
+    // var targetspeed = 1.2; //아이의 평균 보행속도(m/s)
+    // //var lostposition = { "latitude": 37.295975917528786, "longitude": 126.9726127758622 };
     // var lostposition = { "latitude": 37.297885, "longitude": 126.970341 }; // id 37
+    
     var result = test.mainfucntions(losttime, targetspeed, lostposition);
-
     res.send(result);
 });
 
