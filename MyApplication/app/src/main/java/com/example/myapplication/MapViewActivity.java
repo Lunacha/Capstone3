@@ -318,7 +318,9 @@ public class MapViewActivity extends AppCompatActivity implements
                                 Toast.makeText(MapViewActivity.this, error.toString(), Toast.LENGTH_SHORT).show();
                             }
                         });
-                jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(DefaultRetryPolicy.DEFAULT_TIMEOUT_MS, DefaultRetryPolicy.DEFAULT_MAX_RETRIES, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+                jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(100000,//ms
+                        DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
+                        DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
                 requestQueue.add(jsonObjectRequest);
                 //
             } catch (JSONException e) {
