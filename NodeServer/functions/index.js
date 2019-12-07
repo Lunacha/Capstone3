@@ -9,29 +9,37 @@ app.set('port', process.env.PORT || 5000);
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
-app.get('/', (req, res) => {
+app.use('/', (req, res) => {
 
-    var position ={'latitude':'0','longitude':'0'};
+    var lostposition = { "latitude": 0, "longitude": 0 };
+    var losttime = req.body.losttime;
+    var targetspeed = req.body.targetspeed;
+    var lostlatitude = req.body.latitude;
+    var lostlongitude = req.body.longitude;
+    lostposition.latitude = lostlatitude;
+    lostposition.longitude = lostlongitude;
+    console.log(lostposition);
 
-    position.latitude = "12345";
-    position.longitude = "11123";
+    //디버깅용
+    // var losttime = 750.0; // 실종 경과 시간
+    // var targetspeed = 1.04; //아이의 평균 보행속도(m/s)
+    // var lostposition = { "latitude": 37.295975917528786, "longitude": 126.9726127758622 };
+    // var lostposition = { "latitude": 37.297885, "longitude": 126.970341 }; // id 37
+    var result = test.mainfucntions(losttime, targetspeed, lostposition);
 
-    res.send(position);
+    res.send(result);
 });
 
-app.get('/api', (req, res) => {
-    
+app.use('/api', (req, res) => {
+
     var result = test.mainfucntions();
 
     res.send(result);
 });
 
 //로컬 테스트용 - 주석 해제후 firebase부분 + 마지막줄 주석처리
-// http.createServer(app).listen(app.get('port'), function () {
-//     console.log("익스프레스로 웹 서버를 실행 : " + app.get('port'));
-// }); 
+//http.createServer(app).listen(app.get('port'), function () {
+//    console.log("익스프레스로 웹 서버를 실행 : " + app.get('port'));
+//});
 
-exports.app = functions.https.onRequest(app);
-  
-
-  
+exports.app = functions.https.onRequest(app);  

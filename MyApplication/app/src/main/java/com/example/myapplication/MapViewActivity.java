@@ -47,11 +47,21 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.maps.android.SphericalUtil;
+import com.android.volley.DefaultRetryPolicy;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
 
+import org.json.JSONArray;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.util.GeometricShapeFactory;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -107,6 +117,7 @@ public class MapViewActivity extends AppCompatActivity implements
         final private Vector<Member> members = new Vector<>();
 
         private Circle searchingArea = null;
+        private Circle expectedArea = null;
 
         final private ChildEventListener roomListener = new ChildEventListener() {
             @Override
@@ -169,6 +180,7 @@ public class MapViewActivity extends AppCompatActivity implements
 
                 t1.schedule(task_drawingPaths, 500, pathRenewingPeriod);
                 t2.schedule(task_drawingArea, 1500, AreaRenewingPeriod);
+                t3.schedule(task_drawingExpectedArea, 5000, expectedAreaRenewingPeriod);
                 Log.i(LOG_TAG, "Target confirmed.");
             }
 
@@ -242,6 +254,62 @@ public class MapViewActivity extends AppCompatActivity implements
             catch (ConcurrentModificationException e)
             {
                 //
+            }
+        }
+
+        @UiThread
+        void drawExpectedposition(long now){
+            Log.i(LOG_TAG, "Drawing Expected positions.");
+
+            String url = "https://golden-finder.firebaseapp.com/api";
+            //String url = "http://172.30.1.44:5000";
+
+            //JSON형식으로 데이터 통신을 진행
+            JSONObject position = new JSONObject();
+            try {
+                position.put("losttime", Double.toString((now - target.getLostTime()) / 1000d));
+                position.put("targetspeed", Double.toString(target.getSpeed()));
+                position.put("latitude", Double.toString(target.location_lost.latitude));
+                position.put("longitude", Double.toString(target.location_lost.longitude));
+                String jsonString = position.toString(); //완성된 json 포맷
+
+                final RequestQueue requestQueue = Volley.newRequestQueue(MapViewActivity.this);
+                final JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, url, position, new Response.Listener<JSONObject>() {
+
+                    //Get Response
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        try {
+                            JSONObject jsonObject = new JSONObject(response.toString());
+                            JSONArray jsonArray = new JSONObject(jsonObject.toString()).getJSONArray("node");
+
+                            for(int i = 0; i < 3; i ++){
+                                JSONObject jObject = jsonArray.getJSONObject(i);
+                                LatLng expectedPosition = new LatLng(Double.parseDouble(jObject.optString("latitude")),
+                                        Double.parseDouble(jObject.optString("longitude")));
+
+                                expectedArea = map.addCircle(new CircleOptions()
+                                        .zIndex(-100000000000000000000000000000f)
+                                        .fillColor(Color.argb(60, 20, 100, 20))
+                                        .center(expectedPosition)
+                                        .radius(50));
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }, new Response.ErrorListener() {   //when error
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        error.printStackTrace();
+                        Toast.makeText(MapViewActivity.this, error.toString(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+                jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(DefaultRetryPolicy.DEFAULT_TIMEOUT_MS, DefaultRetryPolicy.DEFAULT_MAX_RETRIES, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+                requestQueue.add(jsonObjectRequest);
+                //
+            } catch (JSONException e) {
+                e.printStackTrace();
             }
         }
     }
@@ -551,9 +619,11 @@ public class MapViewActivity extends AppCompatActivity implements
 
     final long pathRenewingPeriod = 500;
     final long AreaRenewingPeriod = 1000;
+    final long expectedAreaRenewingPeriod = 5000;
 
     private Timer t1;
     private Timer t2;
+    private Timer t3;
     private TimerTask task_drawingPaths = new TimerTask() {
         @Override
         public void run() {
@@ -577,7 +647,20 @@ public class MapViewActivity extends AppCompatActivity implements
             myRoom.updateSearchedAreas(now_LocalTime);
         }
     };
+    private TimerTask task_drawingExpectedArea = new TimerTask() {
+        @Override
+        public void run() {
+            long now_Device = SystemClock.elapsedRealtime();
+            long now_LocalTime = now_Device - epoch_Device + epoch_LocalTime;
 
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    myRoom.drawExpectedposition(now_LocalTime);
+                }
+            });
+        }
+    };
 
     private String myUID = null;
     private String myRoomNum = null;
@@ -629,6 +712,7 @@ public class MapViewActivity extends AppCompatActivity implements
 
         t1 = new Timer();
         t2 = new Timer();
+        t3 = new Timer();
     }
 
     @Override
@@ -638,6 +722,7 @@ public class MapViewActivity extends AppCompatActivity implements
 
         t1.cancel();
         t2.cancel();
+        t3.cancel();
 
         myRoom.fin();
 

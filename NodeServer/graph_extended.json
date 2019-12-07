@@ -424,7 +424,7 @@
 {"id": 422, "latitude": 37.295877,  "longitude": 126.975173, "link": [{"id": 204, "distance": -1.0},{"id": 134, "distance": -1.0},{"id": 421, "distance": -1.0}]},
 {"id": 423, "latitude": 37.294197,  "longitude": 126.973234, "link": [{"id": 232, "distance": -1.0},{"id": 424, "distance": -1.0},{"id": 425, "distance": -1.0}]},
 {"id": 424, "latitude": 37.294263,  "longitude": 126.972826, "link": [{"id": 255, "distance": -1.0},{"id": 423, "distance": -1.0},{"id": 425, "distance": -1.0}]},
-{"id": 425, "latitude": 37.294664,  "longitude": 126.973285, "link": [{"id": 256, "distance": -1.0},{"id": 456, "distance": -1.0},{"id": 424, "distance": -1.0},{"id": 423, "distance": -1.0}]},
+{"id": 425, "latitude": 37.294664,  "longitude": 126.973285, "link": [{"id": 256, "distance": -1.0},{"id": 424, "distance": -1.0},{"id": 423, "distance": -1.0}]},
 {"id": 426, "latitude": 37.294968,  "longitude": 126.972545, "link": [{"id": 255, "distance": -1.0},{"id": 425, "distance": -1.0},{"id": 431, "distance": -1.0},{"id": 427, "distance": -1.0}]},
 {"id": 427, "latitude": 37.295334,  "longitude": 126.972819, "link": [{"id": 430, "distance": -1.0},{"id": 428, "distance": -1.0},{"id": 426, "distance": -1.0}]},
 {"id": 428, "latitude": 37.295410,  "longitude": 126.973094, "link": [{"id": 427, "distance": -1.0},{"id": 256, "distance": -1.0},{"id": 429, "distance": -1.0}]},
