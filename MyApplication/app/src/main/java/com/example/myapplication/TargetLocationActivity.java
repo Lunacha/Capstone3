@@ -1,10 +1,8 @@
 package com.example.myapplication;
 
-import android.Manifest;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -25,13 +23,11 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.UUID;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 
-public class TargetLocationActivity extends AppCompatActivity implements
-        OnMapReadyCallback {
+public class TargetLocationActivity
+        extends AppCompatActivity
+        implements OnMapReadyCallback {
     private static final String LOG_TAG = "TargetLocationActivity";
 
     private GoogleMap map;
@@ -90,6 +86,7 @@ public class TargetLocationActivity extends AppCompatActivity implements
                         Toast.makeText(getApplicationContext(),"Room Code가 복사되었습니다.",Toast.LENGTH_SHORT).show();
                         synchronized (targetInfo) {
                             myRef.child(RoomNumber).child("Target").child("time").setValue(targetInfo.time);
+                            myRef.child(RoomNumber).child("Target").child("time_findStart").setValue(System.currentTimeMillis());
                             myRef.child(RoomNumber).child("Target").child("height").setValue(targetInfo.height);
                             myRef.child(RoomNumber).child("Target").child("speed").setValue(targetInfo.speed);
                             myRef.child(RoomNumber).child("Target").child("latitude").setValue(targetInfo.location.latitude);

@@ -28,13 +28,10 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.Circle;
 import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.JointType;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.model.Polygon;
 import com.google.android.gms.maps.model.PolygonOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
@@ -59,11 +56,9 @@ import org.json.JSONArray;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.util.GeometricShapeFactory;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -146,19 +141,21 @@ public class MapViewActivity extends AppCompatActivity implements
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 long time_lost;
+                long time_findStart;
                 double height;
                 double speed;
                 double lat_lost;
                 double lon_lost;
                 try {
                     time_lost = dataSnapshot.child("time").getValue(long.class);
+                    time_findStart = dataSnapshot.child("time_findStart").getValue(long.class);
                     height = dataSnapshot.child("height").getValue(double.class);
                     speed = dataSnapshot.child("speed").getValue(double.class);
                     lat_lost = dataSnapshot.child("latitude").getValue(double.class);
                     lon_lost = dataSnapshot.child("longitude").getValue(double.class);
                 }
                 catch (NullPointerException e) {
-                    Log.i(LOG_TAG, "Target info NULL.");
+                    Log.w(LOG_TAG, "Target info NULL.");
                     return;
                 }
 
@@ -180,7 +177,13 @@ public class MapViewActivity extends AppCompatActivity implements
 
                 t1.schedule(task_drawingPaths, 500, pathRenewingPeriod);
                 t2.schedule(task_drawingArea, 1500, AreaRenewingPeriod);
-                t3.schedule(task_drawingExpectedArea, 0, expectedAreaRenewingPeriod);
+
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        myRoom.drawExpectedposition(time_findStart);
+                    }
+                });
                 Log.i(LOG_TAG, "Target confirmed.");
             }
 
@@ -259,11 +262,11 @@ public class MapViewActivity extends AppCompatActivity implements
 
         @UiThread
         void drawExpectedposition(long now){
-            Log.i(LOG_TAG, "Drawing Expected positions.");
+            Log.w(LOG_TAG, String.format("Drawing Expected positions for input: %d", now));
             double initialtime = (now - target.getLostTime()) / 1000d;
 
-            String url = "https://golden-finder.firebaseapp.com/api";
-            //String url = "http://172.30.1.44:5000";
+            final String url = "https://golden-finder.firebaseapp.com/api";
+            //String url = "http://192.168.25.7:5000";
 
             //JSON형식으로 데이터 통신을 진행
             JSONObject position = new JSONObject();
@@ -275,44 +278,46 @@ public class MapViewActivity extends AppCompatActivity implements
                 String jsonString = position.toString(); //완성된 json 포맷
 
                 final RequestQueue requestQueue = Volley.newRequestQueue(MapViewActivity.this);
-                final JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, url, position, new Response.Listener<JSONObject>() {
+                final JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, url, position,
+                        new Response.Listener<JSONObject>() {
+                            //Get Response
+                            @Override
+                            public void onResponse(JSONObject response) {
+                                try {
+                                    JSONObject jsonObject = new JSONObject(response.toString());
+                                    JSONArray jsonArray = new JSONObject(jsonObject.toString()).getJSONArray("node");
 
-                    //Get Response
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        try {
-                            JSONObject jsonObject = new JSONObject(response.toString());
-                            JSONArray jsonArray = new JSONObject(jsonObject.toString()).getJSONArray("node");
+                                    for (Circle circle : expectedAreaVector) {
+                                        circle.remove();
+                                    }
 
-                            for (Circle circle : expectedAreaVector) {
-                                circle.remove();
+                                    expectedAreaVector.removeAllElements();
+
+                                    for(int i = 0; i < 3; i ++){
+                                        JSONObject jObject = jsonArray.getJSONObject(i);
+                                        LatLng expectedPosition = new LatLng(Double.parseDouble(jObject.optString("latitude")),
+                                                Double.parseDouble(jObject.optString("longitude")));
+
+                                        expectedAreaVector.addElement(map.addCircle(new CircleOptions()
+                                                .zIndex(-99999999999999999999999999000f)
+                                                .fillColor(Color.argb(60, 20, 100, 20))
+                                                .center(expectedPosition)
+                                                .radius(25)
+                                                .strokeWidth(4)));
+                                    }
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
                             }
-
-                            expectedAreaVector.removeAllElements();
-
-                            for(int i = 0; i < 3; i ++){
-                                JSONObject jObject = jsonArray.getJSONObject(i);
-                                LatLng expectedPosition = new LatLng(Double.parseDouble(jObject.optString("latitude")),
-                                        Double.parseDouble(jObject.optString("longitude")));
-
-                                expectedAreaVector.addElement(map.addCircle(new CircleOptions()
-                                        .zIndex(-99999999999999999999999999990f)
-                                        .fillColor(Color.argb(60, 20, 100, 20))
-                                        .center(expectedPosition)
-                                        .radius(50)
-                                        .strokeWidth(4)));
+                        },
+                        new Response.ErrorListener() {
+                            //when error
+                            @Override
+                            public void onErrorResponse(VolleyError error) {
+                                error.printStackTrace();
+                                Toast.makeText(MapViewActivity.this, error.toString(), Toast.LENGTH_SHORT).show();
                             }
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }, new Response.ErrorListener() {   //when error
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        error.printStackTrace();
-                        Toast.makeText(MapViewActivity.this, error.toString(), Toast.LENGTH_SHORT).show();
-                    }
-                });
+                        });
                 jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(DefaultRetryPolicy.DEFAULT_TIMEOUT_MS, DefaultRetryPolicy.DEFAULT_MAX_RETRIES, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
                 requestQueue.add(jsonObjectRequest);
                 //
@@ -627,11 +632,9 @@ public class MapViewActivity extends AppCompatActivity implements
 
     final long pathRenewingPeriod = 500;
     final long AreaRenewingPeriod = 1000;
-    final long expectedAreaRenewingPeriod = 10000;
 
     private Timer t1;
     private Timer t2;
-    private Timer t3;
     private TimerTask task_drawingPaths = new TimerTask() {
         @Override
         public void run() {
@@ -647,26 +650,13 @@ public class MapViewActivity extends AppCompatActivity implements
             });
         }
     };
+
     private TimerTask task_drawingArea = new TimerTask() {
         @Override
         public void run() {
             long now_Device = SystemClock.elapsedRealtime();
             long now_LocalTime = now_Device - epoch_Device + epoch_LocalTime;
             myRoom.updateSearchedAreas(now_LocalTime);
-        }
-    };
-    private TimerTask task_drawingExpectedArea = new TimerTask() {
-        @Override
-        public void run() {
-            long now_Device = SystemClock.elapsedRealtime();
-            long now_LocalTime = now_Device - epoch_Device + epoch_LocalTime;
-
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    myRoom.drawExpectedposition(now_LocalTime);
-                }
-            });
         }
     };
 
@@ -720,7 +710,6 @@ public class MapViewActivity extends AppCompatActivity implements
 
         t1 = new Timer();
         t2 = new Timer();
-        t3 = new Timer();
     }
 
     @Override
@@ -730,7 +719,6 @@ public class MapViewActivity extends AppCompatActivity implements
 
         t1.cancel();
         t2.cancel();
-        t3.cancel();
 
         myRoom.fin();
 
