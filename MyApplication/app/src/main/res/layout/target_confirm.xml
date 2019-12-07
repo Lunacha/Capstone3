@@ -30,6 +30,6 @@
         android:layout_marginRight="4dp"
         android:layout_marginBottom="10dp"
         android:padding="0dp"
-        android:src="@drawable/submitbutton_goldenfinder" />
+        android:src="@drawable/selector_submitbutton" />
 
 </FrameLayout>

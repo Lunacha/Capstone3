@@ -22,7 +22,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:background="#00FFFFFF"
-            android:src="@drawable/childinfo_goldenfinder"
+            android:src="@drawable/selector_childinfo"
             android:layout_weight="1" />
 
 
@@ -32,7 +32,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:background="#00FFFFFF"
-            android:src="@drawable/elderinfo_goldenfinder" />
+            android:src="@drawable/selector_elderinfo" />
 
     </LinearLayout>
 

@@ -67,6 +67,6 @@
         android:layout_gravity="center"
         android:layout_marginTop="5dp"
         android:padding="0dp"
-        android:src="@drawable/infosubmit1_goldenfinder" />
+        android:src="@drawable/selector_infosubmit1" />
 
 </LinearLayout>
