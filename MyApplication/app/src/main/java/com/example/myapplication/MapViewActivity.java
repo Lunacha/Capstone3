@@ -117,7 +117,7 @@ public class MapViewActivity extends AppCompatActivity implements
         final private Vector<Member> members = new Vector<>();
 
         private Circle searchingArea = null;
-        private Circle expectedArea = null;
+        private Vector<Circle> expectedAreaVector = new Vector<>();
 
         final private ChildEventListener roomListener = new ChildEventListener() {
             @Override
@@ -180,7 +180,7 @@ public class MapViewActivity extends AppCompatActivity implements
 
                 t1.schedule(task_drawingPaths, 500, pathRenewingPeriod);
                 t2.schedule(task_drawingArea, 1500, AreaRenewingPeriod);
-                t3.schedule(task_drawingExpectedArea, 10000, expectedAreaRenewingPeriod);
+                t3.schedule(task_drawingExpectedArea, 0, expectedAreaRenewingPeriod);
                 Log.i(LOG_TAG, "Target confirmed.");
             }
 
@@ -284,16 +284,23 @@ public class MapViewActivity extends AppCompatActivity implements
                             JSONObject jsonObject = new JSONObject(response.toString());
                             JSONArray jsonArray = new JSONObject(jsonObject.toString()).getJSONArray("node");
 
+                            for (Circle circle : expectedAreaVector) {
+                                circle.remove();
+                            }
+
+                            expectedAreaVector.removeAllElements();
+
                             for(int i = 0; i < 3; i ++){
                                 JSONObject jObject = jsonArray.getJSONObject(i);
                                 LatLng expectedPosition = new LatLng(Double.parseDouble(jObject.optString("latitude")),
                                         Double.parseDouble(jObject.optString("longitude")));
 
-                                expectedArea = map.addCircle(new CircleOptions()
+                                expectedAreaVector.addElement(map.addCircle(new CircleOptions()
                                         .zIndex(-99999999999999999999999999990f)
                                         .fillColor(Color.argb(60, 20, 100, 20))
                                         .center(expectedPosition)
-                                        .radius(50));
+                                        .radius(50)
+                                        .strokeWidth(4)));
                             }
                         } catch (Exception e) {
                             e.printStackTrace();
