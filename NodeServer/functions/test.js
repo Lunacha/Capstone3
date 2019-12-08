@@ -110,7 +110,7 @@ function calculate_rate(angle_list, index_list, curr_val) {
         rate_list_temp.push([(angle_list[i] + 1) / total * curr_val, index_list[i]]);
     rate_list_temp.sort(comparelists)
 
-    while (rate_list_temp.length > 3)
+    while (rate_list_temp.length > 2)
         rate_list_temp.pop();
 
     return rate_list_temp;
