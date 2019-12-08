@@ -265,8 +265,8 @@ public class MapViewActivity extends AppCompatActivity implements
             Log.w(LOG_TAG, String.format("Drawing Expected positions for input: %d", now));
             double initialtime = (now - target.getLostTime()) / 1000d;
 
-            final String url = "https://golden-finder.firebaseapp.com/api";
-            //String url = "http://192.168.25.7:5000";
+            //final String url = "https://golden-finder.firebaseapp.com/api";
+            final String url = "http://gwakbar.iptime.org:5000";
 
             //JSON형식으로 데이터 통신을 진행
             JSONObject position = new JSONObject();
