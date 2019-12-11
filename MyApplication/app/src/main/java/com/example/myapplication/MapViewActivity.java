@@ -87,7 +87,7 @@ public class MapViewActivity extends AppCompatActivity implements
     static final long hour = 60 * minute;
     static final long[] traceClassifier =
             {
-                    24 * hour, // 48 * hour
+                    20 * minute, // 48 * hour
                     2 * minute, // 30 * minute,
                     minute, // 8 * minute,
                     30 * second, // 3 * minute,

@@ -1,12 +1,10 @@
-# SKKU 2019 2ÇÐ±â Á¾ÇÕ¼³°èÇÁ·ÎÁ§Æ® 3Á¶: ÀüÀÚÃâ°á ÇÏ¼ÌÁ¶
-## ÁÖÁ¦: °ñµç ÆÄÀÎ´õ - GPS ±â¹Ý »ç¶÷Ã£±â ¾îÇÃ¸®ÄÉÀÌ¼Ç
-2ÁÖ°£ 4È¸ È¸ÀÇ¸¦ ÁøÇàÇÏ°í ±³¼ö´Ô°ú ¸é´ãÇÑ °á°ú, ¾Æ·¡ ÈÄº¸µé Áß¿¡¼­ À§¿Í °°Àº ÁÖÁ¦¸¦ ¼±Á¤ÇÏ°Ô µÇ¾ú½À´Ï´Ù.
-* ºí·ÏÃ¼ÀÎÀ» ÀÌ¿ëÇÑ È®·üÇü °ÔÀÓ ¼­¹ö
-* ºí·ÏÃ¼ÀÎÀ» ÀÌ¿ëÇÑ ºÀ»çÈ°µ¿ »çÀÌÆ®
-* °ñµç ÆÄÀÎ´õ - GPS ±â¹Ý »ç¶÷Ã£±â ¾îÇÃ¸®ÄÉÀÌ¼Ç
-## Introduction
+# SKKU 2019 2í•™ê¸° ì¢…í•©ì„¤ê³„í”„ë¡œì íŠ¸ 3ì¡°: ì „ìžì¶œê²° í•˜ì…¨ì¡°
+## ì£¼ì œ: ê³¨ë“  íŒŒì¸ë” - GPS ê¸°ë°˜ ì‚¬ëžŒì°¾ê¸° ì–´í”Œë¦¬ì¼€ì´ì…˜
 ![ic_launcher](MyApplication/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png)  
-¼Ò°³¹®
-## Build °ü·Ã µµ¿ò¸»
+2ì£¼ê°„ 4íšŒ íšŒì˜ë¥¼ ì§„í–‰í•˜ê³  êµìˆ˜ë‹˜ê³¼ ë©´ë‹´í•œ ê²°ê³¼, ì•„ëž˜ í›„ë³´ë“¤ ì¤‘ì—ì„œ ìœ„ì™€ ê°™ì€ ì£¼ì œë¥¼ ì„ ì •í•˜ê²Œ ë˜ì—ˆìŠµë‹ˆë‹¤.
+* ë¸”ë¡ì²´ì¸ì„ ì´ìš©í•œ í™•ë¥ í˜• ê²Œìž„ ì„œë²„
+* ë¸”ë¡ì²´ì¸ì„ ì´ìš©í•œ ë´‰ì‚¬í™œë™ ì‚¬ì´íŠ¸
+* ê³¨ë“  íŒŒì¸ë” - GPS ê¸°ë°˜ ì‚¬ëžŒì°¾ê¸° ì–´í”Œë¦¬ì¼€ì´ì…˜
+## Build ê´€ë ¨ ë„ì›€ë§
 ### MyApplication
-[µµ¿ò¸»](MyApplication/README.md) ÂüÁ¶
+[ë„ì›€ë§](MyApplication/README.md) ì°¸ì¡°
